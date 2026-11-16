@@ -251,7 +251,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   document.body.appendChild(wcv);
   const wctx = wcv.getContext('2d');
   const PC = { D: 373, wF: 90, aisleH: 40, gapTop: 36, eBot: -30, lean: 0.4 };
-  const SP = { D: 244, wF: 36, aisleH: 22, gapTop: 6, eBot: -110, lean: 0.3 };
+  const SP = { D: 244, wF: 36, aisleH: 22, gapTop: 6, eSeat: 0.12, eBot: -30, lean: 0.3 };
   const rng = seed => () => {
     seed |= 0; seed = seed + 0x6D2B79F5 | 0;
     let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
@@ -341,7 +341,10 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     const seatsTopPage = seats.getBoundingClientRect().top + scrollY;
     const eTop = Math.max(0, sr.left - d.gapTop);      // 縦の部分の壁の内側の端
     const eBot = d.eBot;                                // 客席の一番下での壁の内側の端（画面の外へ出てもよい）
-    const wallX = yPage => yPage <= seatsTopPage ? eTop : eTop + (eBot - eTop) * Math.min(1, (yPage - seatsTopPage) / H);
+    // スマホ（2026-11-17）：動画が画面いっぱいで壁の縦の部分が画面の端に近く、そこから開くと斜めの線が画面の外へ出て
+    // まっすぐに見えた。客席の上の端だけ壁を内側（幅の eSeat の割合）から始め、PC と同じくハの字が見えるように
+    const eS = d.eSeat ? Math.round(W * d.eSeat) : eTop;
+    const wallX = yPage => yPage <= seatsTopPage ? eTop : eS + (eBot - eS) * Math.min(1, (yPage - seatsTopPage) / H);
     const rowAt = y => {
       const eL = wallX(seatsTopPage + y);
       const Wr = W - 2 * eL;
@@ -449,7 +452,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     wctx.clearRect(0, 0, DW, bottom);
     [['L', 0], ['R', DW]].forEach(([side, xOut]) => {
       const fx = x => side === 'L' ? x : DW - x;
-      const pts = [[fx(eTop), 0], [fx(eTop), seatsTopPage], [fx(eBot), bottom]];
+      const pts = [[fx(eTop), 0], [fx(eTop), seatsTopPage], ...(eS !== eTop ? [[fx(eS), seatsTopPage]] : []), [fx(eBot), bottom]];
       const g = wctx.createLinearGradient(xOut, 0, fx(eTop), 0);
       g.addColorStop(0, '#000');
       g.addColorStop(1, '#0a0607');

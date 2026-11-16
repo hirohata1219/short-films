@@ -753,5 +753,7 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
     background: rgba(14,6,8,.72);
   }
   .meta dt, .meta dd { padding: 5px 0; }
+  /* ハの字の壁（.walls-cv）がカードの角にかからないよう、カードを壁より手前に（2026-11-17） */
+  .meta { z-index: 6; }
   .seats { height: 100px; }
 }
