@@ -191,7 +191,10 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     $('.c-play').setAttribute('aria-label', '再生');
     show();
   });
-  v.addEventListener('volumechange', () => screen.classList.toggle('is-muted', v.muted));
+  v.addEventListener('volumechange', () => {
+    screen.classList.toggle('is-muted', v.muted);
+    $('.c-mute').setAttribute('aria-label', v.muted ? '音を出す' : '音を消す');   // 読み上げの名前も合わせる
+  });
   ['timeupdate', 'loadedmetadata', 'durationchange', 'seeked'].forEach(ev => v.addEventListener(ev, update));
   screen.addEventListener('mousemove', show);
   screen.addEventListener('touchstart', show, { passive: true });
@@ -248,7 +251,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   document.body.appendChild(wcv);
   const wctx = wcv.getContext('2d');
   const PC = { D: 373, wF: 90, aisleH: 40, gapTop: 36, eBot: -30, lean: 0.4 };
-  const SP = { D: 244, wF: 36, aisleH: 22, gapTop: 6, eBot: -40, lean: 0.3 };
+  const SP = { D: 244, wF: 36, aisleH: 22, gapTop: 6, eBot: -110, lean: 0.3 };
   const rng = seed => () => {
     seed |= 0; seed = seed + 0x6D2B79F5 | 0;
     let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
@@ -469,3 +472,12 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   window.addEventListener('resize', place);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(place);
 })();
+
+// 一覧：表紙の画像が読み込まれるまでは、ぼかした小さな表紙を見せ、読み込めたらふわっと切り替える（2026-11-17）
+document.querySelectorAll('.card .thumb img').forEach(img => {
+  if (img.complete && img.naturalWidth) return;
+  img.classList.add('loading');
+  const done = () => img.classList.remove('loading');
+  img.addEventListener('load', done);
+  img.addEventListener('error', done);
+});
