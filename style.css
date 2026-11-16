@@ -629,3 +629,20 @@ html, body { overflow-x: hidden; }
   .big-play:active { transform: scale(.94); }
   .screen.is-playing .big-play { opacity: 0; pointer-events: none; }
 }
+
+/* 2026-11-16
+   ・作品のページ：スマホは再生バーを消し、真ん中の再生ボタンだけ。注意書きを消したので、情報 →40→ 作品一覧に戻る
+   ・一覧のスマホ：区切り線を「（効果音：効果音ラボ）」と POCKET FILMS のちょうど真ん中へ。
+     線の上下は、POCKET FILMS と © の間と同じ 15px */
+.work-page footer { padding-top: 0; }
+@media (max-width: 759px) {
+  .work-page .controls { display: none; }
+  .work-page .tap-layer { bottom: 0; }
+  body:not(.work-page) footer { border-top: 0; }
+  body:not(.work-page) footer .credit-note {
+    margin: 0 -16px;
+    padding: 0 16px 15px;
+    border-bottom: 1px solid var(--line);
+  }
+  body:not(.work-page) footer .mark { margin-top: 15px; }
+}
