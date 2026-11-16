@@ -231,19 +231,42 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   }, true);
 })();
 
-// 客席を、情報の「完成」の行のあたりから始める（2026-11-17）
+// 客席（2026-11-17）：あらすじと「完成」の行のちょうど真ん中から始まり、フッターまで続く。
+// 奥の2列 → 横の通路（足元の灯り）→ 手前の3列。手前ほど大きく、列は少しずつ横にずらす
 (() => {
   const seats = document.querySelector('.seats');
+  const syn = document.querySelector('.info .synopsis');
   const meta = document.querySelector('.info .meta');
-  if (!seats || !meta) return;
+  if (!seats || !syn || !meta) return;
+  // 列の設計（top は上からの位置、w は座席1つの幅。高さは幅の 5/6）
+  const PC = { rows: [[0, 64], [40, 76], [140, 94], [200, 108], [270, 124]], aisle: [92, 40], D: 373 };
+  const SP = { rows: [[0, 40], [26, 48], [92, 60], [130, 70], [176, 82]], aisle: [60, 26], D: 244 };
   const place = () => {
+    const d = innerWidth < 760 ? SP : PC;
     seats.style.marginTop = '';
     seats.style.height = '';
-    const base = seats.getBoundingClientRect().height;
-    const gap = seats.getBoundingClientRect().top - meta.getBoundingClientRect().top;
-    if (gap <= 0) return;
+    const natTop = seats.getBoundingClientRect().top;
+    const start = (syn.getBoundingClientRect().bottom + meta.getBoundingClientRect().top) / 2;
+    const gap = Math.max(0, natTop - start);
+    const H = Math.max(d.D, gap + 60);
     seats.style.marginTop = -gap + 'px';
-    seats.style.height = base + gap + 'px';
+    seats.style.height = H + 'px';
+    const s = H / d.D; // 列の間隔だけを高さに合わせて伸ばす（座席の大きさは変えない）
+    const seat = getComputedStyle(seats).getPropertyValue('--seat').trim();
+    const layers = [];
+    d.rows.slice().reverse().forEach(([top, w], k) => {
+      const h = Math.round(w * 5 / 6);
+      const y = k === 0 ? H - h : Math.round(top * s);   // 一番手前の列は下にそろえる
+      const shift = (d.rows.length - 1 - k) % 2 ? w / 2 : 0;    // 1列ごとに半分ずらす
+      layers.push(`${seat} calc(50% + ${shift}px) ${y}px / ${w}px ${h}px repeat-x`);
+    });
+    const [ay, ah] = [Math.round(d.aisle[0] * s), d.aisle[1]];
+    // 通路の足元の灯り
+    layers.push(`radial-gradient(circle, rgba(255,200,120,.85) 0 1.5px, rgba(255,180,90,.25) 3px, transparent 5px) 50% ${ay + ah - 8}px / 110px 10px repeat-x`);
+    // 通路の床
+    layers.push(`linear-gradient(rgba(90,22,30,.35), rgba(50,12,18,.35)) 0 ${ay}px / 100% ${ah}px no-repeat`);
+    layers.push('linear-gradient(to bottom, rgba(0,0,0,0), rgba(60,10,16,.35))');
+    seats.style.background = layers.join(', ');
   };
   place();
   window.addEventListener('load', place);
