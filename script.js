@@ -251,7 +251,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   document.body.appendChild(wcv);
   const wctx = wcv.getContext('2d');
   const PC = { D: 373, wF: 90, aisleH: 40, gapTop: 36, eBot: -30, lean: 0.4 };
-  const SP = { D: 244, wF: 36, aisleH: 22, gapTop: 6, eSeat: 0.12, eBot: -30, lean: 0.3 };
+  const SP = { D: 244, wF: 36, aisleH: 22, gapTop: 6, eSeat: 0.2, eBot: -50, lean: 0.7 };
   const rng = seed => () => {
     seed |= 0; seed = seed + 0x6D2B79F5 | 0;
     let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
