@@ -247,8 +247,8 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   wcv.className = 'walls-cv';
   document.body.appendChild(wcv);
   const wctx = wcv.getContext('2d');
-  const PC = { D: 373, wF: 90, aisleH: 40, k: 0.2, lean: 0.3 };
-  const SP = { D: 244, wF: 36, aisleH: 22, k: 0.08, lean: 0.2 };
+  const PC = { D: 373, wF: 90, aisleH: 40, gapTop: 36, eBot: -30, lean: 0.4 };
+  const SP = { D: 244, wF: 36, aisleH: 22, gapTop: 6, eBot: -40, lean: 0.3 };
   const rng = seed => () => {
     seed |= 0; seed = seed + 0x6D2B79F5 | 0;
     let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
@@ -332,12 +332,13 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     // 階段・通路・座席は列の幅に合わせて並ぶので、全体がハの字に集まる。左右の3席の外側は壁
     const U = Math.max(10, W / d.wF);                  // 1列の幅を座席いくつぶんで割るか
     const nC = Math.max(2, Math.floor(U - 6 - 1.5));    // 真ん中の席の数（どの列も同じ）
-    // 壁の線（2026-11-17）：左右の黒い壁は天井（ページの上）から客席の下までまっすぐ続き、下へ行くほど外へ開く（ハの字）。
-    // 動画にかからないよう、動画の上の端で動画のすぐ外側を通る。客席の列の端はこの線に合わせる（だから座席は大きくなる）
+    // 壁の線（2026-11-17 オーナーのスケッチ）：左右の黒い壁は、天井（ページの上）から客席の上の端まではまっすぐ縦
+    // （動画のすぐ外側）。客席の部分では下へ行くほど外へ開く「ハ」の字。客席の列の端はこの線に合わせる
     const sr = document.querySelector('.proscenium').getBoundingClientRect();
-    const vTop = sr.top + scrollY, vLeft = sr.left - 12;
     const seatsTopPage = seats.getBoundingClientRect().top + scrollY;
-    const wallX = yPage => vLeft - d.k * (yPage - vTop);   // 左の壁の内側の端（右は左右対称）
+    const eTop = Math.max(0, sr.left - d.gapTop);      // 縦の部分の壁の内側の端
+    const eBot = d.eBot;                                // 客席の一番下での壁の内側の端（画面の外へ出てもよい）
+    const wallX = yPage => yPage <= seatsTopPage ? eTop : eTop + (eBot - eTop) * Math.min(1, (yPage - seatsTopPage) / H);
     const rowAt = y => {
       const eL = wallX(seatsTopPage + y);
       const Wr = W - 2 * eL;
@@ -443,16 +444,10 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     wcv.width = DW * dpr; wcv.height = bottom * dpr;
     wctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     wctx.clearRect(0, 0, DW, bottom);
-    // 看板（NOW SHOWING）にもかからないよう、看板の外側より内へは入れない（そこから上はまっすぐ縦）
-    const mq = document.querySelector('.marquee');
-    const limit = mq ? mq.getBoundingClientRect().left - 10 : Infinity;
-    const yc = d.k > 0 ? vTop - (limit - vLeft) / d.k : 0;   // 壁の線が limit に届く高さ
     [['L', 0], ['R', DW]].forEach(([side, xOut]) => {
       const fx = x => side === 'L' ? x : DW - x;
-      const pts = [[fx(Math.min(wallX(0), limit)), 0]];
-      if (yc > 0 && wallX(0) > limit) pts.push([fx(limit), yc]);
-      pts.push([fx(wallX(bottom)), bottom]);
-      const g = wctx.createLinearGradient(xOut, 0, pts[pts.length - 1][0], 0);
+      const pts = [[fx(eTop), 0], [fx(eTop), seatsTopPage], [fx(eBot), bottom]];
+      const g = wctx.createLinearGradient(xOut, 0, fx(eTop), 0);
       g.addColorStop(0, '#000');
       g.addColorStop(1, '#0a0607');
       wctx.fillStyle = g;
