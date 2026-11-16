@@ -673,3 +673,89 @@ html, body { overflow-x: hidden; }
 }
 /* 見出しの背景を透けるようにして、後ろのほこりが見えるように */
 .hero { background: radial-gradient(ellipse at 50% 0%, rgba(80,60,35,.45) 0%, rgba(11,10,9,0) 70%); }
+
+/* ===== 作品のページ：赤い幕の映画館（2026-11-16 オーナーが A を選んだ） =====
+   ヘッダー：金の房飾りの上飾り＋左右のワイン色の幕。開くと幕が左右へ開いて題名が現れる
+   フッター：深い赤の床と金の細い線 */
+.stage {
+  position: relative;
+  overflow: hidden;
+  padding: 58px 16px 44px;
+  background:
+    radial-gradient(ellipse 60% 90% at 50% 0%, rgba(255,214,150,.16), transparent 70%),
+    linear-gradient(#140608, #0b0a09);
+  border-bottom: 1px solid rgba(201,169,106,.25);
+}
+.stage .topbar { justify-content: center; padding: 0 0 26px; position: relative; z-index: 3; }
+.stage .topbar .logo { font-size: 15px; letter-spacing: .3em; color: rgba(236,230,220,.85); }
+.stage .film-head { position: relative; z-index: 3; margin: 0; animation: rise 1.4s 1.1s ease both; }
+
+/* 幕：縦のひだ＋下へ行くほど暗い陰 */
+.curtain {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50.5%;
+  z-index: 2;
+  background:
+    linear-gradient(to bottom, rgba(0,0,0,0) 40%, rgba(0,0,0,.55)),
+    repeating-linear-gradient(90deg,
+      #3c070e 0px, #6e1220 10px, #9a1c2c 18px, #6e1220 26px, #3c070e 36px);
+  box-shadow: inset 0 0 40px rgba(0,0,0,.6);
+  animation-duration: 2s;
+  animation-timing-function: cubic-bezier(.6,.05,.25,1);
+  animation-delay: .25s;
+  animation-fill-mode: both;
+}
+.curtain-l { left: 0; transform-origin: left center; animation-name: curtain-open-l; }
+.curtain-r { right: 0; transform-origin: right center; animation-name: curtain-open-r; }
+/* 開いたあと、幕は端に寄せて束ねたように残す */
+@keyframes curtain-open-l {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(.16); }
+}
+@keyframes curtain-open-r {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(.16); }
+}
+/* 上飾り：幕の上の横長の飾り布と金の房 */
+.valance {
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 30px;
+  z-index: 4;
+  background:
+    linear-gradient(to bottom, rgba(0,0,0,.35), rgba(0,0,0,0) 60%),
+    repeating-linear-gradient(90deg, #5a0e18 0px, #8e1a28 14px, #5a0e18 28px);
+  box-shadow: 0 6px 14px rgba(0,0,0,.55);
+}
+.valance::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -7px;
+  height: 8px;
+  background:
+    radial-gradient(circle at 6px 0, #c9a96a 0 3px, transparent 3.5px) 0 0 / 12px 8px repeat-x,
+    linear-gradient(#c9a96a, #c9a96a) 0 0 / 100% 2px no-repeat;
+}
+
+/* フッター：赤い床と金の線 */
+.work-page footer {
+  background:
+    linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,.35)),
+    linear-gradient(#3a0a12, #24060b);
+  border-top: 1px solid rgba(201,169,106,.55);
+  box-shadow: inset 0 1px 0 rgba(201,169,106,.15);
+  padding-top: 40px;
+  color: rgba(236,230,220,.7);
+}
+.work-page footer .footer-back { border-bottom-color: rgba(201,169,106,.3); }
+.work-page .film { padding-top: 36px; }
+.work-page .pager { display: none; }
+
+@media (max-width: 759px) {
+  .stage { padding: 50px 16px 34px; }
+  @keyframes curtain-open-l { from { transform: scaleX(1); } to { transform: scaleX(.1); } }
+  @keyframes curtain-open-r { from { transform: scaleX(1); } to { transform: scaleX(.1); } }
+  .valance { height: 24px; }
+}
