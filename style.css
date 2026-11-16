@@ -646,3 +646,30 @@ html, body { overflow-x: hidden; }
   }
   body:not(.work-page) footer .mark { margin-top: 15px; }
 }
+
+/* 2026-11-16
+   ・ほこりを一覧ページ全体の背景に（画面に固定）
+   ・一覧のスマホ：「※全ての作品は…」の上（表紙の動画まで）と下（区切り線まで）を同じ 38px に
+   ・作品のページのスマホ：真ん中の再生ボタンを半透明にし、縁だけ金色に（表紙が透けて見える） */
+.dust {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: -1;
+  animation: dust-in 3s 1s ease both;
+}
+@media (max-width: 759px) {
+  body:not(.work-page) footer .credit-note { padding-bottom: 38px; }
+  .big-play {
+    background: rgba(0,0,0,.25);
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    box-shadow: none;
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+  }
+}
+/* 見出しの背景を透けるようにして、後ろのほこりが見えるように */
+.hero { background: radial-gradient(ellipse at 50% 0%, rgba(80,60,35,.45) 0%, rgba(11,10,9,0) 70%); }

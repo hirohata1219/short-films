@@ -46,31 +46,36 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
 })();
 
 // 光の中を漂うほこり（点滅させず、ゆっくり漂わせる）
+// 2026-11-16：見出しだけでなく、一覧ページ全体の背景に（画面に固定して、スクロールしても漂い続ける）
 (() => {
   const cv = document.querySelector('.dust');
   if (!cv) return;
   const ctx = cv.getContext('2d');
-  let w, h, dpr, motes = [];
+  let w = 0, h = 0, dpr, motes = [];
   const rand = (a, b) => a + Math.random() * (b - a);
-  function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
-    w = cv.clientWidth; h = cv.clientHeight;
-    cv.width = w * dpr; cv.height = h * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const n = Math.round(Math.min(60, Math.max(24, w / 22)));
-    motes = Array.from({ length: n }, () => make(true));
-  }
   function make(anywhere) {
-    // 上の真ん中（明かりの中）に多く集まるように
-    const x = w / 2 + (Math.random() + Math.random() - 1) * w * 0.45;
     return {
-      x, y: anywhere ? rand(0, h) : h + 10,
+      x: rand(0, w),
+      y: anywhere ? rand(0, h) : h + 10,
       r: rand(0.6, 2.2),
       vx: rand(-0.08, 0.08),
       vy: rand(-0.22, -0.06),
       phase: rand(0, Math.PI * 2),
-      a: rand(0.25, 0.7),
+      a: rand(0.2, 0.6),
     };
+  }
+  function resize() {
+    const nw = window.innerWidth, nh = window.innerHeight;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = nw * dpr; cv.height = nh * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const widthChanged = nw !== w;
+    w = nw; h = nh;
+    // スマホのアドレスバーの出入り（高さだけの変化）では粒を作り直さない
+    if (widthChanged || !motes.length) {
+      const n = Math.round(Math.min(90, Math.max(30, (w * h) / 14000)));
+      motes = Array.from({ length: n }, () => make(true));
+    }
   }
   function draw(t) {
     ctx.clearRect(0, 0, w, h);
@@ -78,10 +83,9 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
       m.x += m.vx + Math.sin(t / 3000 + m.phase) * 0.12;
       m.y += m.vy;
       if (m.y < -10 || m.x < -10 || m.x > w + 10) Object.assign(m, make(false));
-      // 明かりの中心に近いほど明るく、上下の端ではやさしく消える
-      const cx = Math.abs(m.x - w / 2) / (w / 2);
-      const edge = Math.min(1, m.y / (h * 0.15), (h - m.y) / (h * 0.25));
-      const alpha = m.a * Math.max(0, 1 - cx * 0.8) * Math.max(0, edge);
+      // 上下の端ではやさしく消える
+      const edge = Math.min(1, m.y / (h * 0.12), (h - m.y) / (h * 0.12));
+      const alpha = m.a * Math.max(0, edge);
       const g = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, m.r * 3);
       g.addColorStop(0, `rgba(255,228,180,${alpha})`);
       g.addColorStop(1, 'rgba(255,228,180,0)');
