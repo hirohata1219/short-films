@@ -611,12 +611,14 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
   padding: 20px 28px;
   font-size: 14px;
   color: rgba(236,230,220,.88);
-  background: rgba(14,6,8,.36); /* 少しだけ透かして後ろが見えるように（2026-11-17、.86→.72→.36） */
+  background: rgba(14,6,8,.2); /* 少しだけ透かして後ろが見えるように（2026-11-17、.86→.72→.36→.2、ぼかし 3→1px、文字に影） */
   border: 1px solid rgba(201,169,106,.5);
   border-radius: 8px;
-  box-shadow: 0 10px 30px rgba(0,0,0,.6), inset 0 0 0 4px rgba(14,6,8,.36), inset 0 0 0 5px rgba(201,169,106,.18);
-  -webkit-backdrop-filter: blur(3px);
-  backdrop-filter: blur(3px);
+  box-shadow: 0 10px 30px rgba(0,0,0,.6), inset 0 0 0 4px rgba(14,6,8,.2), inset 0 0 0 5px rgba(201,169,106,.18);
+  -webkit-backdrop-filter: blur(1px);
+  backdrop-filter: blur(1px);
+  /* 後ろの座席と重なっても読めるように、文字に細い影 */
+  text-shadow: 0 0 2px rgba(0,0,0,.95), 0 1px 3px rgba(0,0,0,.8);
 }
 .meta dt, .meta dd {
   margin: 0;
@@ -750,7 +752,7 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
     padding: 6px 14px;
     font-size: 12px;
     line-height: 1.6;
-    background: rgba(14,6,8,.31);
+    background: rgba(14,6,8,.18);
   }
   .meta dt, .meta dd { padding: 5px 0; }
   /* ハの字の壁（.walls-cv）がカードの角にかからないよう、カードを壁より手前に（2026-11-17） */
