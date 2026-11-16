@@ -232,8 +232,8 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
 })();
 
 // 客席（2026-11-17）：あらすじと情報のカードのちょうど真ん中から始まり、フッターまで続く。
-// 奥の2列 → 横の通路（足元の灯り）→ 手前の3列。手前ほど大きく、1列ごとに半分ずらす。
-// 座席の約3分の1に観客が座っている（毎回同じ並びになるように、決まった乱数で選ぶ）
+// 階段状（スクリーンに近い列ほど低く、手前ほど高い）。左右に縦の階段、階段から端までは3席ずつ。
+// 全体の約4割の所に横の通路。座席の約3分の1に観客（決まった乱数で毎回同じ並び）
 (() => {
   const seats = document.querySelector('.seats');
   const syn = document.querySelector('.info .synopsis');
@@ -243,9 +243,8 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   cv.className = 'seats-cv';
   seats.appendChild(cv);
   const ctx = cv.getContext('2d');
-  // D は客席の最低の高さ
-  const PC = { D: 373 };
-  const SP = { D: 244 };
+  const PC = { D: 373, wB: 48, wF: 92, aisleH: 40, extra: 190 };
+  const SP = { D: 244, wB: 18, wF: 34, aisleH: 22, extra: 150 };
   const rng = seed => () => {
     seed |= 0; seed = seed + 0x6D2B79F5 | 0;
     let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
@@ -262,21 +261,26 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     ctx.lineTo(x + w, y + h);
     ctx.closePath();
   };
+  const glow = (x, y, r, a) => {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `rgba(255,210,140,${a})`);
+    g.addColorStop(.35, `rgba(255,180,90,${a * .35})`);
+    g.addColorStop(1, 'rgba(255,180,90,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  };
   const person = (cx, top, w, rand) => {
-    const r = w * (0.17 + rand() * 0.03);           // 頭の大きさに少し差をつける
-    const hy = top - r * (0.55 + rand() * 0.25);     // 背の高さにも少し差
+    const r = w * (0.17 + rand() * 0.03);
+    const hy = top - r * (0.55 + rand() * 0.25);
     const hx = cx + (rand() - 0.5) * w * 0.08;
-    // 肩
     ctx.fillStyle = '#0b0506';
     ctx.beginPath();
     ctx.ellipse(hx, top + r * 0.55, w * 0.34, r * 1.15, 0, Math.PI, 0);
     ctx.fill();
-    // 首と頭
     ctx.fillRect(hx - r * 0.35, hy, r * 0.7, r * 1.4);
     ctx.beginPath();
     ctx.arc(hx, hy, r, 0, Math.PI * 2);
     ctx.fill();
-    // スクリーンの光が頭の縁に少し当たる
     ctx.strokeStyle = 'rgba(255,205,170,.16)';
     ctx.lineWidth = Math.max(1, w * 0.02);
     ctx.beginPath();
@@ -285,15 +289,13 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   };
   const seat = (x, y, w, h) => {
     const bw = w * 44 / 60, bx = x + w * 8 / 60, by = y + h * 4 / 50;
-    // ひじ掛け
     ctx.fillStyle = '#180608';
     rr(x + w * 2 / 60, y + h * 26 / 50, w * 6 / 60, h * 24 / 50, 2); ctx.fill();
     rr(x + w * 52 / 60, y + h * 26 / 50, w * 6 / 60, h * 24 / 50, 2); ctx.fill();
-    // 背もたれ
     ctx.fillStyle = '#260a0e';
     rr(bx, by, bw, h - (by - y), w * 10 / 60); ctx.fill();
     ctx.strokeStyle = '#521620';
-    ctx.lineWidth = Math.max(1.2, w * 2 / 60);
+    ctx.lineWidth = Math.max(1, w * 2 / 60);
     ctx.beginPath();
     ctx.moveTo(bx, by + w * 10 / 60);
     ctx.quadraticCurveTo(bx, by, bx + w * 10 / 60, by);
@@ -308,7 +310,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     const natTop = seats.getBoundingClientRect().top;
     const start = (syn.getBoundingClientRect().bottom + meta.getBoundingClientRect().top) / 2;
     const gap = Math.max(0, natTop - start);
-    const H = Math.max(d.D, gap + (d === SP ? 150 : 190)); // 情報のカードの下にも客席が見えるように
+    const H = Math.max(d.D, gap + d.extra);
     seats.style.marginTop = -gap + 'px';
     seats.style.height = H + 'px';
     const W = seats.clientWidth;
@@ -317,48 +319,88 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     cv.style.width = W + 'px'; cv.style.height = H + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
-    // 床
-    const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, 'rgba(0,0,0,0)');
-    g.addColorStop(1, 'rgba(60,10,16,.35)');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    // 列を高さに合わせて並べる：奥ほど小さく、手前ほど大きく。全体の約4割の所に横の通路
-    const wB = d === SP ? 40 : 64, wF = d === SP ? 82 : 124, aisleH = d === SP ? 26 : 40;
+
+    // 列を高さに合わせて並べる（奥＝スクリーン側ほど小さい）。約4割の所に横の通路
     const rows = [];
-    let y = 0, ay = -1;
-    for (let k = 0; k < 40; k++) {
-      const w = Math.round(wB + (wF - wB) * Math.min(1, y / H));
+    let y = 0, ay = -1, ayEnd = -1;
+    for (let k = 0; k < 80; k++) {
+      const w = Math.round(d.wB + (d.wF - d.wB) * Math.min(1, y / H));
       const h = Math.round(w * 5 / 6);
       if (y + h > H) break;
-      rows.push([y, w, h]);
+      rows.push({ y, w, h });
       y += Math.round(h * 0.62);
-      if (ay < 0 && y > H * 0.36) { ay = y + Math.round(h * 0.25); y += aisleH + Math.round(h * 0.25); }
+      if (ay < 0 && y > H * 0.36) {
+        ay = y + Math.round(h * 0.25);
+        ayEnd = ay + d.aisleH;
+        y = ayEnd;
+      }
     }
-    if (rows.length) { const last = rows[rows.length - 1]; last[0] = H - last[2]; } // 一番手前の列は下にそろえる
-    // 通路の床と足元の灯り
-    const ah = aisleH;
+    if (!rows.length) return;
+    rows[rows.length - 1].y = H - rows[rows.length - 1].h;
+    // 各列の左右の階段の位置（端から3席ぶん）
+    rows.forEach(r => {
+      r.sw = r.w * 0.9;               // 階段の幅
+      r.xL = 3 * r.w;                 // 左の階段の左端
+      r.xR = W - 3 * r.w - r.sw;      // 右の階段の左端
+    });
+
+    // 段（ステップ）の床：手前ほど高い段。段の縁に細い明かりの線
+    rows.forEach((r, i) => {
+      const top = r.y + r.h * 0.45;
+      const bottom = i < rows.length - 1 ? rows[i + 1].y + rows[i + 1].h * 0.45 : H;
+      const g = ctx.createLinearGradient(0, top, 0, bottom);
+      g.addColorStop(0, i % 2 ? 'rgba(44,12,16,.55)' : 'rgba(36,10,13,.55)');
+      g.addColorStop(1, 'rgba(14,4,6,.75)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, top, W, bottom - top);
+      ctx.fillStyle = 'rgba(140,50,60,.28)';
+      ctx.fillRect(0, top, W, 1);
+    });
+    // 横の通路
     if (ay >= 0) {
-      ctx.fillStyle = 'rgba(70,18,26,.35)';
-      ctx.fillRect(0, ay, W, ah);
-      for (let x = W / 2 % 110; x < W; x += 110) {
-        const lg = ctx.createRadialGradient(x, ay + ah - 4, 0, x, ay + ah - 4, 5);
-        lg.addColorStop(0, 'rgba(255,205,130,.9)');
-        lg.addColorStop(.4, 'rgba(255,180,90,.3)');
-        lg.addColorStop(1, 'rgba(255,180,90,0)');
-        ctx.fillStyle = lg;
-        ctx.fillRect(x - 5, ay + ah - 9, 10, 10);
-      }
+      ctx.fillStyle = 'rgba(70,18,26,.45)';
+      ctx.fillRect(0, ay, W, ayEnd - ay);
+      ctx.fillStyle = 'rgba(160,60,70,.25)';
+      ctx.fillRect(0, ay, W, 1);
+      for (let x = W / 2 % 110; x < W; x += 110) glow(x, ayEnd - 4, 6, .9);
     }
-    // 奥の列から順に描く（約3分の1に観客）
-    rows.forEach(([ry, w, h], i) => {
-      const shift = i % 2 ? w / 2 : 0;   // 1列ごとに半分ずらす
-      const rand = rng(1000 + i * 97);
-      let x0 = W / 2 + shift - w / 2;
-      x0 -= Math.ceil(x0 / w) * w;
-      for (let x = x0; x < W; x += w) {
-        if (rand() < 1 / 3) person(x + w / 2, ry + h * 4 / 50, w, rand);
-        seat(x, ry, w, h);
+    // 左右の縦の階段（段の縁ごとに足元の灯り）
+    const stair = side => {
+      for (let i = 0; i < rows.length; i++) {
+        const a = rows[i], b = rows[i + 1];
+        const y1 = a.y + a.h * 0.45, y2 = b ? b.y + b.h * 0.45 : H;
+        const xa = side === 'L' ? a.xL : a.xR, xb = b ? (side === 'L' ? b.xL : b.xR) : xa;
+        const wa = a.sw, wb = b ? b.sw : wa;
+        ctx.fillStyle = '#1d0c0f';
+        ctx.beginPath();
+        ctx.moveTo(xa, y1); ctx.lineTo(xa + wa, y1);
+        ctx.lineTo(xb + wb, y2); ctx.lineTo(xb, y2);
+        ctx.closePath(); ctx.fill();
+        // 1列に2段
+        for (const t of [0, 0.5]) {
+          const yy = y1 + (y2 - y1) * t, xx = xa + (xb - xa) * t, ww = wa + (wb - wa) * t;
+          ctx.fillStyle = 'rgba(190,120,90,.35)';
+          ctx.fillRect(xx + 1, yy, ww - 2, 1);
+          glow(xx + 3, yy + 1, Math.max(3, a.w * 0.08), .8);
+          glow(xx + ww - 3, yy + 1, Math.max(3, a.w * 0.08), .8);
+        }
       }
+    };
+    stair('L');
+    stair('R');
+
+    // 座席（奥の列から順に）。左右は3席ずつ、真ん中は階段の間に並べる
+    rows.forEach((r, i) => {
+      const rand = rng(1000 + i * 97);
+      const xs = [0, 1, 2].map(k => r.xL - 3 * r.w + k * r.w);
+      const cL = r.xL + r.sw, cR = r.xR, n = Math.floor((cR - cL) / r.w);
+      const c0 = cL + ((cR - cL) - n * r.w) / 2;
+      for (let k = 0; k < n; k++) xs.push(c0 + k * r.w);
+      for (let k = 0; k < 3; k++) xs.push(r.xR + r.sw + k * r.w);
+      xs.forEach(x => {
+        if (rand() < 1 / 3) person(x + r.w / 2, r.y + r.h * 4 / 50, r.w, rand);
+        seat(x, r.y, r.w, r.h);
+      });
     });
   };
   place();

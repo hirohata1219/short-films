@@ -1020,3 +1020,75 @@ html, body { overflow-x: hidden; }
     font-size: 13px;
   }
 }
+
+/* 2026-11-17：舞台の床（手前の縁に等間隔の足元のライト）と左右のスピーカー
+   PC の広い画面：動画の左右の外側に縦長のスピーカー。狭い画面とスマホ：床の左右の端に小さなスピーカー */
+.stage-floor {
+  position: relative;
+  height: 40px;
+  margin: 0 -10px;
+  border-radius: 0 0 6px 6px;
+  background:
+    radial-gradient(circle, #fff1cc 0 2px, #ffcf7a 3px, rgba(255,190,100,.35) 6px, transparent 9px) 50% 100% / 64px 18px repeat-x,
+    linear-gradient(to bottom, #2a1410, #170a08 70%, #0e0605);
+  box-shadow: 0 10px 24px rgba(0,0,0,.6), inset 0 1px 0 rgba(201,169,106,.35);
+}
+/* ライトの光が上へ少し広がる */
+.stage-floor::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: -40px; height: 40px;
+  background: linear-gradient(to top, rgba(255,200,120,.10), rgba(255,200,120,0));
+  pointer-events: none;
+}
+.speaker {
+  position: absolute;
+  bottom: 6px;
+  width: 44px;
+  height: 30px;
+  border-radius: 4px;
+  background: linear-gradient(#1b1715, #0b0909);
+  border: 1px solid rgba(201,169,106,.25);
+  box-shadow: 0 4px 10px rgba(0,0,0,.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.speaker i {
+  display: block;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #3a3532 0 18%, #0d0b0a 22%, #2a2522 60%, #0d0b0a 64%, #1d1917 100%);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+}
+.speaker-l { left: 14px; }
+.speaker-r { right: 14px; }
+@media (min-width: 1180px) {
+  /* 動画の左右の外側に縦長のスピーカー */
+  .speaker {
+    bottom: 8px;
+    width: 52px;
+    height: 150px;
+    flex-direction: column;
+    gap: 14px;
+    border-radius: 6px;
+  }
+  .speaker i { width: 34px; height: 34px; }
+  .speaker i:first-child { width: 22px; height: 22px; }
+  .speaker-l { left: -64px; }
+  .speaker-r { right: -64px; }
+}
+@media (max-width: 759px) {
+  .stage-floor {
+    height: 30px;
+    margin: 0 -6px;
+    background:
+      radial-gradient(circle, #fff1cc 0 1.5px, #ffcf7a 2.5px, rgba(255,190,100,.35) 4.5px, transparent 7px) 50% 100% / 40px 14px repeat-x,
+      linear-gradient(to bottom, #2a1410, #170a08 70%, #0e0605);
+  }
+  .speaker { width: 30px; height: 20px; bottom: 5px; gap: 2px; }
+  .speaker i { width: 11px; height: 11px; }
+  .speaker-l { left: 8px; }
+  .speaker-r { right: 8px; }
+}
