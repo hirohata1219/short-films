@@ -218,7 +218,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   const open = () => {
     if (screen.classList.contains('curtains-open')) return;
     screen.classList.add('curtains-open');
-    setTimeout(() => screen.classList.add('curtains-gone'), 1900);
+    setTimeout(() => screen.classList.add("curtains-gone"), 3300);
   };
   btn.addEventListener('click', open);
   // 幕が閉じている間のスペースキーは、再生ではなく幕を開ける
@@ -229,4 +229,24 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
       open();
     }
   }, true);
+})();
+
+// 客席を、情報の「完成」の行のあたりから始める（2026-11-17）
+(() => {
+  const seats = document.querySelector('.seats');
+  const meta = document.querySelector('.info .meta');
+  if (!seats || !meta) return;
+  const place = () => {
+    seats.style.marginTop = '';
+    seats.style.height = '';
+    const base = seats.getBoundingClientRect().height;
+    const gap = seats.getBoundingClientRect().top - meta.getBoundingClientRect().top;
+    if (gap <= 0) return;
+    seats.style.marginTop = -gap + 'px';
+    seats.style.height = base + gap + 'px';
+  };
+  place();
+  window.addEventListener('load', place);
+  window.addEventListener('resize', place);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(place);
 })();
