@@ -243,8 +243,12 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   cv.className = 'seats-cv';
   seats.appendChild(cv);
   const ctx = cv.getContext('2d');
-  const PC = { D: 373, wF: 80, aisleH: 40, persp: 0.62, lean: 0.35 };
-  const SP = { D: 244, wF: 28, aisleH: 22, persp: 0.62, lean: 0.3 };
+  const wcv = document.createElement('canvas');
+  wcv.className = 'walls-cv';
+  document.body.appendChild(wcv);
+  const wctx = wcv.getContext('2d');
+  const PC = { D: 373, wF: 90, aisleH: 40, k: 0.2, lean: 0.3 };
+  const SP = { D: 244, wF: 36, aisleH: 22, k: 0.08, lean: 0.2 };
   const rng = seed => () => {
     seed |= 0; seed = seed + 0x6D2B79F5 | 0;
     let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
@@ -328,12 +332,16 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     // 階段・通路・座席は列の幅に合わせて並ぶので、全体がハの字に集まる。左右の3席の外側は壁
     const U = Math.max(10, W / d.wF);                  // 1列の幅を座席いくつぶんで割るか
     const nC = Math.max(2, Math.floor(U - 6 - 1.5));    // 真ん中の席の数（どの列も同じ）
-    const top = d.persp;                               // 一番奥の列の幅（手前に対する割合）
+    // 壁の線（2026-11-17）：左右の黒い壁は天井（ページの上）から客席の下までまっすぐ続き、下へ行くほど外へ開く（ハの字）。
+    // 動画にかからないよう、動画の上の端で動画のすぐ外側を通る。客席の列の端はこの線に合わせる（だから座席は大きくなる）
+    const sr = document.querySelector('.proscenium').getBoundingClientRect();
+    const vTop = sr.top + scrollY, vLeft = sr.left - 12;
+    const seatsTopPage = seats.getBoundingClientRect().top + scrollY;
+    const wallX = yPage => vLeft - d.k * (yPage - vTop);   // 左の壁の内側の端（右は左右対称）
     const rowAt = y => {
-      const p = Math.min(1, Math.max(0, y / H));
-      const Wr = W * (top + (1 - top) * p);
+      const eL = wallX(seatsTopPage + y);
+      const Wr = W - 2 * eL;
       const w = Wr / U;
-      const eL = (W - Wr) / 2;
       const sw = w * 0.75;
       return { Wr, w, h: Math.round(w * 5 / 6), eL, eR: eL + Wr, sw, xL: eL + 3 * w, xR: eL + Wr - 3 * w - sw };
     };
@@ -347,7 +355,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
       y += Math.round(r.h * 0.62);
       if (ay < 0 && y > H * 0.36) {
         ay = y + Math.round(r.h * 0.25);
-        ayEnd = ay + Math.round(d.aisleH * (top + (1 - top) * (ay / H)));
+        ayEnd = ay + Math.round(d.aisleH * r.w / d.wF);
         y = ayEnd;
       }
     }
@@ -357,7 +365,6 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
       const r = rowAt(H - last.h);
       Object.assign(last, r, { y: H - r.h });
     }
-    const edgeAt = (yy, side) => { const r = rowAt(yy); return side === 'L' ? r.eL : r.eR; };
 
     // 段（ステップ）の床：手前ほど高い段。段の縁に細い明かりの線
     rows.forEach((r, i) => {
@@ -373,44 +380,13 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     });
     // 横の通路
     if (ay >= 0) {
-      ctx.fillStyle = 'rgba(70,18,26,.45)';
+      ctx.fillStyle = '#050304';   // 横の通路の足元は黒
       ctx.fillRect(0, ay, W, ayEnd - ay);
       ctx.fillStyle = 'rgba(160,60,70,.25)';
       ctx.fillRect(0, ay, W, 1);
       const ra = rowAt(ayEnd);
       for (let x = ra.eL + ra.w * 1.5; x < ra.eR - ra.w; x += ra.w * 1.6) glow(x, ayEnd - 4, 5, .85);
     }
-    // 左右の壁（客席の外側。ハの字の線にそって）
-    const wall = side => {
-      const xTop = edgeAt(0, side), xBot = edgeAt(H, side), xOut = side === 'L' ? 0 : W;
-      const g = ctx.createLinearGradient(xOut, 0, xTop, 0);
-      g.addColorStop(0, '#120708');
-      g.addColorStop(1, '#2a0e12');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.moveTo(xOut, 0); ctx.lineTo(xTop, 0); ctx.lineTo(xBot, H); ctx.lineTo(xOut, H);
-      ctx.closePath(); ctx.fill();
-      // 壁の板の継ぎ目（奥へ集まる線）
-      ctx.strokeStyle = 'rgba(0,0,0,.35)';
-      ctx.lineWidth = 1;
-      for (let k = 1; k <= 3; k++) {
-        const f = k / 4;
-        ctx.beginPath();
-        ctx.moveTo(xOut + (xTop - xOut) * f, 0);
-        ctx.lineTo(xOut + (xBot - xOut) * f, H);
-        ctx.stroke();
-      }
-      // 壁の縁（客席との境目）にうっすら明かり
-      ctx.strokeStyle = 'rgba(201,169,106,.25)';
-      ctx.beginPath(); ctx.moveTo(xTop, 0); ctx.lineTo(xBot, H); ctx.stroke();
-      // 壁の小さなランプ
-      for (const f of [0.25, 0.7]) {
-        const yy = H * f, xe = edgeAt(yy, side);
-        glow(xOut + (xe - xOut) * 0.5, yy, Math.max(6, rowAt(yy).w * 0.18), .55);
-      }
-    };
-    wall('L');
-    wall('R');
     // 左右の縦の階段（ハの字にそって。段の縁に足元の灯り）
     const stair = side => {
       for (let i = 0; i < rows.length; i++) {
@@ -457,6 +433,40 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
         seat(x, r.y, r.w, r.h);
         ctx.restore();
       });
+    });
+
+    // ページ全体の左右の黒い壁（天井＝ページの上から、客席の下＝フッターの線まで）
+    const bottom = seatsTopPage + H;
+    const DW = document.documentElement.clientWidth;
+    wcv.style.height = bottom + 'px';
+    wcv.style.width = DW + 'px';
+    wcv.width = DW * dpr; wcv.height = bottom * dpr;
+    wctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    wctx.clearRect(0, 0, DW, bottom);
+    // 看板（NOW SHOWING）にもかからないよう、看板の外側より内へは入れない（そこから上はまっすぐ縦）
+    const mq = document.querySelector('.marquee');
+    const limit = mq ? mq.getBoundingClientRect().left - 10 : Infinity;
+    const yc = d.k > 0 ? vTop - (limit - vLeft) / d.k : 0;   // 壁の線が limit に届く高さ
+    [['L', 0], ['R', DW]].forEach(([side, xOut]) => {
+      const fx = x => side === 'L' ? x : DW - x;
+      const pts = [[fx(Math.min(wallX(0), limit)), 0]];
+      if (yc > 0 && wallX(0) > limit) pts.push([fx(limit), yc]);
+      pts.push([fx(wallX(bottom)), bottom]);
+      const g = wctx.createLinearGradient(xOut, 0, pts[pts.length - 1][0], 0);
+      g.addColorStop(0, '#000');
+      g.addColorStop(1, '#0a0607');
+      wctx.fillStyle = g;
+      wctx.beginPath();
+      wctx.moveTo(xOut, 0);
+      pts.forEach(([x, yy]) => wctx.lineTo(x, yy));
+      wctx.lineTo(xOut, bottom);
+      wctx.closePath(); wctx.fill();
+      // 壁の内側の縁にうっすら光
+      wctx.strokeStyle = 'rgba(201,169,106,.22)';
+      wctx.lineWidth = 1;
+      wctx.beginPath();
+      pts.forEach(([x, yy], i) => i ? wctx.lineTo(x, yy) : wctx.moveTo(x, yy));
+      wctx.stroke();
     });
   };
   place();

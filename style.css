@@ -1107,3 +1107,24 @@ html, body { overflow-x: hidden; }
       linear-gradient(to bottom, #2a1410, #170a08 70%, #0e0605);
   }
 }
+
+/* 2026-11-17：ページ全体の左右の黒い壁（script.js の canvas）。中身の上に重ねるが、押す操作はじゃましない */
+.walls-cv { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 5; }
+/* スピーカーは、どの画面幅でも動画の左右の下（舞台の床の端）に小さく */
+.speaker {
+  bottom: 6px !important;
+  width: 50px !important;
+  height: 28px !important;
+  flex-direction: row !important;
+  gap: 4px !important;
+  border-radius: 4px !important;
+}
+.speaker i, .speaker i:first-child { width: 16px !important; height: 16px !important; }
+.speaker-l { left: 18px !important; }
+.speaker-r { right: 18px !important; }
+@media (max-width: 759px) {
+  .speaker { width: 34px !important; height: 20px !important; gap: 2px !important; bottom: 5px !important; }
+  .speaker i, .speaker i:first-child { width: 12px !important; height: 12px !important; }
+  .speaker-l { left: 12px !important; }
+  .speaker-r { right: 12px !important; }
+}
