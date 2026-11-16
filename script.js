@@ -108,7 +108,8 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   v.addEventListener('ended', off);
 })();
 
-// 作品のページ：自作の再生バー（上の段：シーク、下の段：今の時間｜−5・再生・+5｜長さ・音・全画面）
+// 作品のページ：自作の再生バー（上の段：シーク、下の段：今の時間｜−5・再生・+5｜音・全画面）
+// 2026-11-16：再生を始めるときは PC もスマホも全画面に。スマホはスキップなし、再生ボタンは動画の真ん中
 (() => {
   const screen = document.querySelector('.screen');
   const v = screen && screen.querySelector('video');
@@ -128,7 +129,28 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     clearTimeout(timer);
     if (!v.paused) timer = setTimeout(() => screen.classList.remove('show-ui'), 2500);
   };
-  const toggle = () => { v.paused ? v.play() : v.pause(); };
+  const isFull = () => document.fullscreenElement || document.webkitFullscreenElement || v.webkitDisplayingFullscreen;
+  const enterFull = () => {
+    if (isFull()) return;
+    if (screen.requestFullscreen) screen.requestFullscreen().catch(() => {});
+    else if (screen.webkitRequestFullscreen) screen.webkitRequestFullscreen();
+    else if (v.webkitEnterFullscreen) v.webkitEnterFullscreen(); // iPhone は本体の全画面プレーヤーで
+  };
+  const exitFull = () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
+    else if (v.webkitDisplayingFullscreen && v.webkitExitFullscreen) v.webkitExitFullscreen();
+  };
+  // 再生を始めるときは全画面にする。止めるときはそのまま
+  const toggle = () => {
+    if (v.paused) {
+      const p = v.play();
+      enterFull();
+      if (p && p.catch) p.catch(() => {});
+    } else {
+      v.pause();
+    }
+  };
   const skip = s => {
     v.currentTime = Math.min(Math.max(0, v.currentTime + s), v.duration || 0);
     show();
@@ -142,15 +164,11 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
 
   $('.tap-layer').addEventListener('click', () => { toggle(); show(); });
   $('.c-play').addEventListener('click', () => { toggle(); show(); });
+  $('.big-play').addEventListener('click', () => { toggle(); show(); });
   $('.c-back').addEventListener('click', () => skip(-STEP));
   $('.c-fwd').addEventListener('click', () => skip(STEP));
   $('.c-mute').addEventListener('click', () => { v.muted = !v.muted; show(); });
-  $('.c-full').addEventListener('click', () => {
-    if (document.fullscreenElement) document.exitFullscreen();
-    else if (screen.requestFullscreen) screen.requestFullscreen();
-    else if (v.webkitEnterFullscreen) v.webkitEnterFullscreen(); // iPhone は本体の全画面プレーヤーで
-    show();
-  });
+  $('.c-full').addEventListener('click', () => { isFull() ? exitFull() : enterFull(); show(); });
   seek.addEventListener('input', () => {
     seeking = true;
     if (v.duration) v.currentTime = seek.value / 1000 * v.duration;
