@@ -251,7 +251,9 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   document.body.appendChild(wcv);
   const wctx = wcv.getContext('2d');
   const PC = { D: 373, wF: 90, aisleH: 40, gapTop: 36, eBot: -30, lean: 0.4 };
-  const SP = { D: 244, wF: 36, aisleH: 22, gapTop: 6, eSeat: 0.2, eBot: -50, lean: 0.7 };
+  // スマホ（2026-11-17 オーナー指示）：真ん中は4席、その左右に通路、外側に3席。1列＝座席12個ぶん（U）。
+  // 座席の幅は奥で画面の幅の wT、手前で wB。手前では通路が画面の外へ出るほど強いハの字
+  const SP = { D: 244, wF: 36, aisleH: 22, gapTop: 6, U: 12, wT: 0.067, wB: 0.24, lean: 0.7 };
   const rng = seed => () => {
     seed |= 0; seed = seed + 0x6D2B79F5 | 0;
     let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
@@ -333,17 +335,17 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
 
     // 遠近（2026-11-17）：客席全体を「ハ」の字に。スクリーン側（上）ほど列の幅がせまく、手前（下）ほど広い。
     // 階段・通路・座席は列の幅に合わせて並ぶので、全体がハの字に集まる。左右の3席の外側は壁
-    const U = Math.max(10, W / d.wF);                  // 1列の幅を座席いくつぶんで割るか
+    const U = d.U || Math.max(10, W / d.wF);           // 1列の幅を座席いくつぶんで割るか
     const nC = Math.max(2, Math.floor(U - 6 - 1.5));    // 真ん中の席の数（どの列も同じ）
     // 壁の線（2026-11-17 オーナーのスケッチ）：左右の黒い壁は、天井（ページの上）から客席の上の端まではまっすぐ縦
     // （動画のすぐ外側）。客席の部分では下へ行くほど外へ開く「ハ」の字。客席の列の端はこの線に合わせる
     const sr = document.querySelector('.proscenium').getBoundingClientRect();
     const seatsTopPage = seats.getBoundingClientRect().top + scrollY;
     const eTop = Math.max(0, sr.left - d.gapTop);      // 縦の部分の壁の内側の端
-    const eBot = d.eBot;                                // 客席の一番下での壁の内側の端（画面の外へ出てもよい）
+    const eBot = d.wB ? W / 2 - U / 2 * W * d.wB : d.eBot; // 客席の一番下での壁の内側の端（画面の外へ出てもよい）
     // スマホ（2026-11-17）：動画が画面いっぱいで壁の縦の部分が画面の端に近く、そこから開くと斜めの線が画面の外へ出て
     // まっすぐに見えた。客席の上の端だけ壁を内側（幅の eSeat の割合）から始め、PC と同じくハの字が見えるように
-    const eS = d.eSeat ? Math.round(W * d.eSeat) : eTop;
+    const eS = d.wT ? W / 2 - U / 2 * W * d.wT : eTop;
     const wallX = yPage => yPage <= seatsTopPage ? eTop : eS + (eBot - eS) * Math.min(1, (yPage - seatsTopPage) / H);
     const rowAt = y => {
       const eL = wallX(seatsTopPage + y);
