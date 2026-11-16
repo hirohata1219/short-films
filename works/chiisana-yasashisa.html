@@ -14,25 +14,32 @@
 
 
 <section class="stage">
-  <div class="valance" aria-hidden="true"></div>
-  <div class="curtain curtain-l" aria-hidden="true"></div>
-  <div class="curtain curtain-r" aria-hidden="true"></div>
   <header class="topbar">
     <a class="logo" href="../index.html">POCKET FILMS</a>
   </header>
-  <div class="film-head">
-      <h1>小さなやさしさ</h1>
-      <p class="en">A Little Kindness</p>
+  <div class="marquee">
+    <p class="now-showing">NOW SHOWING</p>
+    <div class="film-head">
+        <h1>小さなやさしさ</h1>
+        <p class="en">A Little Kindness</p>
+    </div>
   </div>
 </section>
 
 <main class="film">
+  <div class="proscenium">
+  <div class="screen-valance" aria-hidden="true"></div>
   <div class="screen">
     <video playsinline preload="metadata" poster="../images/chiisana-yasashisa.jpg" width="1280" height="720">
       <source src="../films/chiisana-yasashisa.mp4" type="video/mp4">
     </video>
     <button class="tap-layer" type="button" aria-label="再生・一時停止"></button>
     <button class="big-play" type="button" aria-label="再生"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button>
+    <button class="sc-curtains" type="button" aria-label="幕を開ける">
+      <span class="sc-curtain sc-left" aria-hidden="true"></span>
+      <span class="sc-curtain sc-right" aria-hidden="true"></span>
+      <span class="sc-hint"><span class="sc-hint-main">上映する</span><span class="sc-hint-sub">クリックで幕が開きます</span></span>
+    </button>
     <div class="controls">
       <input class="c-seek" type="range" min="0" max="1000" step="1" value="0" aria-label="再生位置">
       <div class="c-row">
@@ -49,6 +56,7 @@
       </div>
     </div>
   </div>
+  </div>
   <div class="info">
       <p class="synopsis">雨が苦手な子犬のクラモは、道ばたで赤い傘を見つける。持ち主をさがして雨の町を歩くうちに、小さな胸に勇気が芽生えていく。セリフのない、水彩の絵本のような物語。</p>
       <dl class="meta">
@@ -61,8 +69,11 @@
   </div>
 </main>
 
+<div class="seats" aria-hidden="true"></div>
+
 
 <footer>
+  <p class="exit-sign" aria-hidden="true">EXIT</p>
   <p class="footer-back"><a class="back-list" href="../index.html"><span aria-hidden="true">←</span> 作品一覧に戻る</a></p>
   <p class="mark">POCKET FILMS</p>
   <p>&copy; 2026 ぽけっと</p>

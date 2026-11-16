@@ -759,3 +759,187 @@ html, body { overflow-x: hidden; }
   @keyframes curtain-open-r { from { transform: scaleX(1); } to { transform: scaleX(.1); } }
   .valance { height: 24px; }
 }
+
+/* ===== 作品のページ：劇場（2026-11-16 オーナーの案） =====
+   ヘッダー：電球の並んだ劇場の看板「NOW SHOWING」
+   動画：舞台の上飾り＋閉じた赤い幕。クリック／タップで左右に開く
+   動画より下：客席のシルエット
+   フッター：赤い床と緑の EXIT の表示 */
+
+/* --- ヘッダー：劇場の看板 --- */
+.stage {
+  padding: 28px 16px 40px;
+  background:
+    radial-gradient(ellipse 70% 100% at 50% 0%, rgba(150,30,45,.35), transparent 70%),
+    linear-gradient(#1c0709, #0b0a09);
+  border-bottom: 0;
+  overflow: visible;
+}
+.stage .topbar { padding: 0 0 22px; }
+.marquee {
+  position: relative;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 22px 28px 24px;
+  border-radius: 10px;
+  background: linear-gradient(#1a0d06, #120806);
+  border: 2px solid #b8935a;
+  box-shadow:
+    0 0 0 6px #2a1508,
+    0 0 0 8px #b8935a,
+    0 0 40px rgba(255,200,120,.18),
+    inset 0 0 30px rgba(0,0,0,.6);
+  animation: rise 1.2s .2s ease both;
+}
+/* 枠の電球（点滅させず、静かに光る） */
+.marquee::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 14px;
+  pointer-events: none;
+  --bulb: radial-gradient(circle, #fff6dc 0 1.6px, #ffd27a 2.4px, rgba(255,190,90,.35) 4px, transparent 5px);
+  background:
+    var(--bulb) 0 0 / 18px 6px repeat-x,
+    var(--bulb) 0 100% / 18px 6px repeat-x,
+    var(--bulb) 0 0 / 6px 18px repeat-y,
+    var(--bulb) 100% 0 / 6px 18px repeat-y;
+}
+.now-showing {
+  margin: 0 0 10px;
+  text-align: center;
+  font-family: var(--serif-en);
+  font-size: 12px;
+  letter-spacing: .5em;
+  padding-left: .5em;
+  color: #e9c886;
+  text-shadow: 0 0 10px rgba(255,200,120,.45);
+}
+.stage .film-head { animation: none; }
+.stage .film-head h1 { text-shadow: 0 0 18px rgba(255,210,150,.25); }
+
+/* --- 動画：舞台 --- */
+.proscenium { position: relative; padding-top: 22px; }
+.screen-valance {
+  position: absolute;
+  left: -10px; right: -10px; top: 0;
+  height: 26px;
+  z-index: 8;
+  border-radius: 4px 4px 0 0;
+  background:
+    linear-gradient(to bottom, rgba(0,0,0,.3), rgba(0,0,0,0) 60%),
+    repeating-linear-gradient(90deg, #5a0e18 0px, #8e1a28 14px, #5a0e18 28px);
+  box-shadow: 0 6px 14px rgba(0,0,0,.6);
+}
+.screen-valance::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -7px;
+  height: 8px;
+  background:
+    radial-gradient(circle at 6px 0, #c9a96a 0 3px, transparent 3.5px) 0 0 / 12px 8px repeat-x,
+    linear-gradient(#c9a96a, #c9a96a) 0 0 / 100% 2px no-repeat;
+}
+.sc-curtains {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+.sc-curtain {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 51%;
+  background:
+    linear-gradient(to bottom, rgba(255,255,255,.06), rgba(0,0,0,0) 30%, rgba(0,0,0,.5)),
+    repeating-linear-gradient(90deg,
+      #3c070e 0px, #6e1220 9px, #a01e30 16px, #6e1220 24px, #3c070e 32px);
+  box-shadow: inset 0 0 50px rgba(0,0,0,.55);
+  transition: transform 1.8s cubic-bezier(.6,.05,.25,1);
+}
+.sc-left  { left: 0;  box-shadow: inset -18px 0 30px rgba(0,0,0,.55), inset 0 0 50px rgba(0,0,0,.4); }
+.sc-right { right: 0; box-shadow: inset 18px 0 30px rgba(0,0,0,.55), inset 0 0 50px rgba(0,0,0,.4); }
+.sc-hint {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 26px;
+  border: 1px solid rgba(201,169,106,.75);
+  border-radius: 6px;
+  background: rgba(20,6,8,.55);
+  color: #e9c886;
+  white-space: nowrap;
+  transition: opacity .5s ease;
+}
+.sc-hint-main { font-family: var(--serif-ja); font-size: 20px; letter-spacing: .3em; padding-left: .3em; }
+.sc-hint-sub { font-size: 11px; letter-spacing: .1em; color: rgba(236,230,220,.75); }
+.sc-curtains:hover .sc-hint { background: rgba(40,10,14,.75); }
+.screen.curtains-open .sc-left  { transform: translateX(-100%); }
+.screen.curtains-open .sc-right { transform: translateX(100%); }
+.screen.curtains-open .sc-hint  { opacity: 0; }
+.screen.curtains-open .sc-curtains { pointer-events: none; }
+.screen.curtains-gone .sc-curtains { display: none; }
+/* 幕が閉じている間は、再生バーと再生ボタンを隠す */
+.screen:not(.curtains-open) .controls,
+.screen:not(.curtains-open) .big-play { opacity: 0 !important; pointer-events: none !important; }
+
+/* --- 動画より下：客席 --- */
+.work-page .film { padding-bottom: 8px; }
+.seats {
+  height: 150px;
+  margin-top: 10px;
+  --seat: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='50' viewBox='0 0 60 50'><path d='M8 50V14Q8 4 18 4H42Q52 4 52 14V50Z' fill='%23260a0e'/><path d='M8 14Q8 4 18 4H42Q52 4 52 14' fill='none' stroke='%23521620' stroke-width='2'/><rect x='2' y='26' width='6' height='24' rx='2' fill='%23180608'/><rect x='52' y='26' width='6' height='24' rx='2' fill='%23180608'/></svg>");
+  background:
+    var(--seat) 50% 100% / 92px 77px repeat-x,
+    var(--seat) calc(50% + 34px) 64px / 72px 60px repeat-x,
+    var(--seat) 50% 30px / 56px 47px repeat-x,
+    linear-gradient(to bottom, rgba(0,0,0,0), rgba(60,10,16,.35));
+  opacity: .95;
+}
+
+/* --- フッター：赤い床と EXIT --- */
+.work-page footer { padding-top: 34px; }
+.exit-sign {
+  display: inline-block;
+  margin: 0 0 18px !important;
+  padding: 3px 12px;
+  border-radius: 3px;
+  background: #0d3b22;
+  color: #b9ffcf;
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: .35em;
+  padding-left: calc(12px + .35em);
+  box-shadow: 0 0 14px rgba(80,255,150,.35), inset 0 0 6px rgba(0,0,0,.4);
+  text-shadow: 0 0 6px rgba(140,255,190,.8);
+}
+.work-page footer .footer-back { margin-top: 0; }
+
+@media (max-width: 759px) {
+  .stage { padding: 22px 16px 30px; }
+  .marquee { padding: 18px 16px 20px; }
+  .now-showing { font-size: 10px; }
+  .screen-valance { left: -6px; right: -6px; height: 20px; }
+  .proscenium { padding-top: 16px; }
+  .sc-hint { padding: 10px 18px; }
+  .sc-hint-main { font-size: 16px; }
+  .sc-hint-sub { font-size: 10px; }
+  .seats {
+    height: 100px;
+    background:
+      var(--seat) 50% 100% / 60px 50px repeat-x,
+      var(--seat) calc(50% + 22px) 42px / 48px 40px repeat-x,
+      var(--seat) 50% 18px / 38px 32px repeat-x,
+      linear-gradient(to bottom, rgba(0,0,0,0), rgba(60,10,16,.35));
+  }
+}

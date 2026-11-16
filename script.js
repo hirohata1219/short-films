@@ -207,3 +207,26 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   update();
   show();
 })();
+
+// 作品のページ：動画の前の赤い幕。クリック／タップで左右に開く（2026-11-16）
+(() => {
+  const screen = document.querySelector('.screen');
+  const btn = screen && screen.querySelector('.sc-curtains');
+  if (!btn) return;
+  const sub = btn.querySelector('.sc-hint-sub');
+  if (sub && matchMedia('(hover: none)').matches) sub.textContent = 'タップで幕が開きます';
+  const open = () => {
+    if (screen.classList.contains('curtains-open')) return;
+    screen.classList.add('curtains-open');
+    setTimeout(() => screen.classList.add('curtains-gone'), 1900);
+  };
+  btn.addEventListener('click', open);
+  // 幕が閉じている間のスペースキーは、再生ではなく幕を開ける
+  document.addEventListener('keydown', e => {
+    if (e.key === ' ' && !screen.classList.contains('curtains-open')) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      open();
+    }
+  }, true);
+})();
