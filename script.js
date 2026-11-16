@@ -308,10 +308,14 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     seats.style.marginTop = '';
     seats.style.height = '';
     const natTop = seats.getBoundingClientRect().top;
-    const start = (syn.getBoundingClientRect().bottom + meta.getBoundingClientRect().top) / 2;
+    const synB = syn.getBoundingClientRect().bottom;
+    const mr = meta.getBoundingClientRect();
+    const start = (synB + mr.top) / 2;
     const gap = Math.max(0, natTop - start);
-    const H = Math.max(d.D, gap + d.extra);
+    // 客席の下の端（＝フッターの線）を、情報のカードの下から「カードの上〜あらすじ」と同じ距離に（2026-11-17）
+    const above = mr.top - synB;
     seats.style.marginTop = -gap + 'px';
+    const H = Math.max(80, Math.round(mr.bottom + above - seats.getBoundingClientRect().top));
     seats.style.height = H + 'px';
     const W = seats.clientWidth;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -337,16 +341,23 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     }
     if (!rows.length) return;
     rows[rows.length - 1].y = H - rows[rows.length - 1].h;
-    // 各列の左右の階段の位置（端から3席ぶん）
-    // 階段はまっすぐ縦に（どの列も同じ位置・同じ幅）。一番手前の列の3席ぶんを端からの距離にする
+    // 奥行き：スクリーン側（上）ほど中央に寄せて「ハ」の字にする。
+    // 横の位置は X(y, 手前での位置) で決め、どの線も上の1点（消失点 vy）に向かう。
+    // A は傾きの強さ（1 で座席の大きさの縮み方と同じ、0 で縦にまっすぐ）。少しだけなので 0.5
+    const A = 0.5;
+    const cx = W / 2;
+    const spAt = yy => 1 - A + A * (d.wB + (d.wF - d.wB) * Math.min(1, yy / H)) / d.wF;
+    const vy = -(1 - A + A * d.wB / d.wF) * H * d.wF / (A * (d.wF - d.wB));
+    const X = (yy, xFront) => cx + (xFront - cx) * spAt(yy);
+    // 階段の手前での位置と幅（一番手前の列の3席ぶんを端からの距離にする）
     const SW = Math.round(d.wF * 0.75);
     const XL = 3 * d.wF, XR = W - 3 * d.wF - SW;
-    rows.forEach(r => { r.sw = SW; r.xL = XL; r.xR = XR; });
+    const floorY = r => r.y + r.h * 0.45;
 
     // 段（ステップ）の床：手前ほど高い段。段の縁に細い明かりの線
     rows.forEach((r, i) => {
-      const top = r.y + r.h * 0.45;
-      const bottom = i < rows.length - 1 ? rows[i + 1].y + rows[i + 1].h * 0.45 : H;
+      const top = floorY(r);
+      const bottom = i < rows.length - 1 ? floorY(rows[i + 1]) : H;
       const g = ctx.createLinearGradient(0, top, 0, bottom);
       g.addColorStop(0, i % 2 ? 'rgba(44,12,16,.55)' : 'rgba(36,10,13,.55)');
       g.addColorStop(1, 'rgba(14,4,6,.75)');
@@ -363,21 +374,19 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
       ctx.fillRect(0, ay, W, 1);
       for (let x = W / 2 % 110; x < W; x += 110) glow(x, ayEnd - 4, 6, .9);
     }
-    // 左右の縦の階段（段の縁ごとに足元の灯り）
-    const stair = side => {
+    // 左右の階段（ハの字。段の縁ごとに足元の灯り）
+    const stair = xFront => {
       for (let i = 0; i < rows.length; i++) {
         const a = rows[i], b = rows[i + 1];
-        const y1 = a.y + a.h * 0.45, y2 = b ? b.y + b.h * 0.45 : H;
-        const xa = side === 'L' ? a.xL : a.xR, xb = b ? (side === 'L' ? b.xL : b.xR) : xa;
-        const wa = a.sw, wb = b ? b.sw : wa;
+        const y1 = floorY(a), y2 = b ? floorY(b) : H;
         ctx.fillStyle = '#1d0c0f';
         ctx.beginPath();
-        ctx.moveTo(xa, y1); ctx.lineTo(xa + wa, y1);
-        ctx.lineTo(xb + wb, y2); ctx.lineTo(xb, y2);
+        ctx.moveTo(X(y1, xFront), y1); ctx.lineTo(X(y1, xFront + SW), y1);
+        ctx.lineTo(X(y2, xFront + SW), y2); ctx.lineTo(X(y2, xFront), y2);
         ctx.closePath(); ctx.fill();
         // 1列に2段
         for (const t of [0, 0.5]) {
-          const yy = y1 + (y2 - y1) * t, xx = xa + (xb - xa) * t, ww = wa + (wb - wa) * t;
+          const yy = y1 + (y2 - y1) * t, xx = X(yy, xFront), ww = X(yy, xFront + SW) - xx;
           ctx.fillStyle = 'rgba(190,120,90,.35)';
           ctx.fillRect(xx + 1, yy, ww - 2, 1);
           if (t === 0) {   // 灯りは1列に1段だけ（前の半分）
@@ -387,20 +396,31 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
         }
       }
     };
-    stair('L');
-    stair('R');
+    stair(XL);
+    stair(XR);
 
-    // 座席（奥の列から順に）。左右は3席ずつ、真ん中は階段の間に並べる
+    // 座席（奥の列から順に）。左右は3席ずつ、真ん中は階段の間に並べる。
+    // 1席ずつ、消失点に向かう線に合わせて少し斜めにする（左は右上がり、右は左上がり）
     rows.forEach((r, i) => {
       const rand = rng(1000 + i * 97);
-      const xs = [0, 1, 2].map(k => r.xL - (k + 1) * r.w);   // 階段のすぐ外側から3席
-      const cL = r.xL + r.sw, cR = r.xR, n = Math.floor((cR - cL) / r.w);
-      const c0 = cL + ((cR - cL) - n * r.w) / 2;
+      const fy = floorY(r);
+      const sL = X(fy, XL), sLR = X(fy, XL + SW), sR = X(fy, XR), sRR = X(fy, XR + SW);
+      const xs = [0, 1, 2].map(k => sL - (k + 1) * r.w);   // 階段のすぐ外側から3席
+      const n = Math.floor((sR - sLR) / r.w);
+      const c0 = sLR + ((sR - sLR) - n * r.w) / 2;
       for (let k = 0; k < n; k++) xs.push(c0 + k * r.w);
-      for (let k = 0; k < 3; k++) xs.push(r.xR + r.sw + k * r.w);
+      for (let k = 0; k < 3; k++) xs.push(sRR + k * r.w);
+      const yb = r.y + r.h;
       xs.forEach(x => {
-        if (rand() < 1 / 3) person(x + r.w / 2, r.y + r.h * 4 / 50, r.w, rand);
+        const xc = x + r.w / 2;
+        const k = (xc - cx) / (yb - vy);
+        ctx.save();
+        ctx.translate(xc, yb);
+        ctx.transform(1, 0, k, 1, 0, 0);
+        ctx.translate(-xc, -yb);
+        if (rand() < 1 / 3) person(xc, r.y + r.h * 4 / 50, r.w, rand);
         seat(x, r.y, r.w, r.h);
+        ctx.restore();
       });
     });
   };
