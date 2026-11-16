@@ -1,0 +1,593 @@
+:root {
+  --bg: #0b0a09;
+  --text: #ece6dc;
+  --muted: #9b9388;
+  --line: #2a2622;
+  --accent: #c9a96a;
+  --serif-en: "Cormorant Garamond", "Times New Roman", serif;
+  --serif-ja: "Noto Serif JP", serif;
+  --sans: "Noto Sans JP", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  line-height: 1.9;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; }
+
+/* トップの見出し */
+.hero {
+  min-height: 56vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 72px 16px 56px;
+  background: radial-gradient(ellipse at 50% 0%, #2a2117 0%, var(--bg) 70%);
+}
+.eyebrow {
+  font-size: 12px;
+  letter-spacing: .4em;
+  color: var(--muted);
+  margin: 0 0 20px;
+}
+.hero h1 {
+  font-family: var(--serif-en);
+  font-weight: 600;
+  font-size: clamp(44px, 10vw, 96px);
+  letter-spacing: .14em;
+  line-height: 1.1;
+  margin: 0;
+  padding-left: .14em;
+}
+.hero .lead {
+  font-family: var(--serif-ja);
+  color: var(--muted);
+  font-size: 16px;
+  letter-spacing: .2em;
+  margin: 28px 0 0;
+}
+
+/* 作品の一覧 */
+.grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px 80px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+@media (min-width: 760px) {
+  .grid { grid-template-columns: repeat(3, 1fr); gap: 32px; }
+}
+.card {
+  display: block;
+  text-decoration: none;
+  padding-bottom: 20px;
+}
+.card .thumb {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #000;
+  box-shadow: 0 20px 50px rgba(0,0,0,.5), 0 0 0 1px var(--line);
+}
+.card .thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .6s ease, filter .6s ease;
+  filter: brightness(.88);
+}
+.card:hover .thumb img,
+.card:focus-visible .thumb img { transform: scale(1.04); filter: brightness(1); }
+.no {
+  font-family: var(--serif-en);
+  color: var(--accent);
+  font-size: 14px;
+  letter-spacing: .3em;
+  font-variant-numeric: lining-nums;
+  margin: 14px 0 0;
+}
+.card h2 {
+  font-family: var(--serif-ja);
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.5;
+  margin: 2px 0 0;
+}
+.card:hover h2 { color: var(--accent); }
+
+/* 作品のページ */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
+.topbar .logo {
+  font-family: var(--serif-en);
+  font-weight: 600;
+  letter-spacing: .2em;
+  font-size: 18px;
+  text-decoration: none;
+}
+.topbar .back {
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.topbar .back:hover { color: var(--accent); }
+.film { max-width: 1040px; margin: 0 auto; padding: 24px 16px 64px; }
+.screen {
+  background: #000;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 1px var(--line);
+}
+.screen video { display: block; width: 100%; height: auto; background: #000; }
+.info {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  margin-top: 32px;
+}
+@media (min-width: 760px) {
+  .info { grid-template-columns: 5fr 7fr; gap: 48px; }
+}
+.info h1 {
+  font-family: var(--serif-ja);
+  font-weight: 600;
+  font-size: clamp(26px, 5vw, 34px);
+  line-height: 1.4;
+  margin: 0;
+}
+.info .en {
+  font-family: var(--serif-en);
+  color: var(--muted);
+  letter-spacing: .12em;
+  font-size: 16px;
+  margin: 6px 0 0;
+}
+.synopsis { font-family: var(--serif-ja); font-size: 15px; margin: 0 0 20px; }
+dl.meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 20px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+dl.meta dt { color: var(--accent); white-space: nowrap; }
+dl.meta dd { margin: 0; }
+.pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 24px 16px 56px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+.pager a { color: var(--muted); text-decoration: none; }
+.pager a:hover { color: var(--accent); }
+.pager .next { margin-left: auto; text-align: right; }
+
+footer {
+  border-top: 1px solid var(--line);
+  text-align: center;
+  padding: 48px 16px 64px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 2;
+}
+footer .mark {
+  font-family: var(--serif-en);
+  letter-spacing: .3em;
+  color: var(--text);
+  font-size: 15px;
+}
+
+/* スマホ：見出しの下の余白を半分（約150px → 76px）にし、同じ 76px を作品の間と最後の作品の下に空ける（2026-11-16 オーナーの指示） */
+@media (max-width: 759px) {
+  .hero { min-height: 0; padding: 76px 16px 76px; }
+  .grid { gap: 76px; padding-bottom: 38px; }
+  .card { padding-bottom: 0; }
+  footer { padding-top: 0; }
+  footer p:first-child { margin-top: 0; }
+}
+
+/* ===== 動き（2026-11-16 追加） ===== */
+
+/* 暗転からページが現れる・暗転して次のページへ */
+body { animation: page-in .7s ease both; }
+body.leaving { opacity: 0; transition: opacity .45s ease; }
+@keyframes page-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* 開いたときの登場の演出 */
+.hero .eyebrow { animation: rise 1.2s .3s ease both; }
+.hero h1 { animation: title-in 2s .5s cubic-bezier(.2,.7,.2,1) both; }
+.hero .lead { animation: rise 1.4s 1.5s ease both; }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes title-in {
+  from { opacity: 0; letter-spacing: .32em; filter: blur(8px); }
+  to   { opacity: 1; letter-spacing: .14em; filter: blur(0); }
+}
+.grid .card { animation: rise 1.2s ease both; }
+.grid .card:nth-child(1) { animation-delay: 1.9s; }
+.grid .card:nth-child(2) { animation-delay: 2.1s; }
+.grid .card:nth-child(3) { animation-delay: 2.3s; }
+
+/* 映写機の明かり（動かさない） */
+.hero { position: relative; }
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255,214,150,.26) 0%, transparent 65%);
+  pointer-events: none;
+}
+.hero > * { position: relative; }
+
+
+/* 表紙が短い動画になる */
+.card .thumb { position: relative; }
+.card .thumb video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity .6s ease;
+  pointer-events: none;
+}
+.card.playing .thumb video { opacity: 1; }
+
+/* 「動きを減らす」設定に関係なく、すべての人に同じ動きを見せる（2026-11-16 オーナーの決定） */
+
+
+/* 光の中を漂うほこり（2026-11-16 粒とゆらぎの代わり） */
+.hero > .dust {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  animation: dust-in 3s 1s ease both;
+}
+@keyframes dust-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* スマホでもタイトルを1行に（375px で 2行に折り返していた） */
+.hero { overflow: hidden; }
+.hero h1 { font-size: clamp(30px, 9.4vw, 96px); white-space: nowrap; }
+
+/* 作品にスポットライト（2026-11-16）：光の当たった作品のほかは暗く沈む */
+.card { position: relative; transition: filter .6s ease, opacity .6s ease; }
+.card::before {
+  content: "";
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  top: -40%;
+  height: 120%;
+  background: radial-gradient(ellipse 50% 60% at 50% 30%, rgba(255,222,170,.18), transparent 70%);
+  opacity: 0;
+  transition: opacity .6s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+.card.lit::before { opacity: 1; }
+.card.lit .thumb { box-shadow: 0 0 0 1px rgba(255,222,170,.35), 0 24px 60px rgba(255,200,130,.12), 0 20px 50px rgba(0,0,0,.5); }
+.card.lit h2 { color: var(--accent); }
+.grid:has(.card.lit) .card:not(.lit) { filter: brightness(.4) saturate(.7); }
+.grid { position: relative; z-index: 0; }
+
+/* 再生すると客席の照明が落ちる（2026-11-16） */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  transition: opacity 1.6s ease;
+  pointer-events: none;
+  z-index: 50;
+}
+body.lights-off::before { opacity: .94; }
+.screen { position: relative; z-index: 60; transition: box-shadow 1.6s ease; }
+body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px rgba(255,255,255,.04); }
+
+/* 作品のページ下：作品一覧へのリンクを中央に（2026-11-16） */
+.pager { justify-content: center; }
+.pager a { font-family: var(--serif-ja); font-size: 14px; color: var(--text); border-bottom: 1px solid var(--line); padding-bottom: 2px; }
+.pager a:hover { color: var(--accent); border-color: var(--accent); }
+
+/* 自作の再生バー（2026-11-16、オーナーが A「映画配信風の2段」を選んだ）
+   上の段：シークバー。下の段：左に今の時間、真ん中に −5・再生・+5、右に長さ・音・全画面 */
+.tap-layer {
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  bottom: 88px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  z-index: 2;
+  -webkit-tap-highlight-color: transparent;
+}
+.controls {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 28px 20px 12px;
+  background: linear-gradient(to top, rgba(0,0,0,.85) 0%, rgba(0,0,0,.55) 55%, rgba(0,0,0,0) 100%);
+  z-index: 3;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .35s ease;
+}
+.screen.show-ui .controls { opacity: 1; pointer-events: auto; }
+.c-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  margin-top: 6px;
+}
+.c-left { justify-self: start; }
+.c-center { display: flex; align-items: center; gap: 18px; }
+.c-right { justify-self: end; display: flex; align-items: center; gap: 2px; }
+.c-time {
+  font-family: var(--serif-en);
+  font-size: 15px;
+  letter-spacing: .06em;
+  color: rgba(255,255,255,.85);
+  font-variant-numeric: lining-nums tabular-nums;
+  white-space: nowrap;
+}
+.c-right .c-time { margin-right: 8px; }
+.c-btn {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: color .2s ease, background .2s ease, transform .15s ease;
+}
+.c-btn:active { transform: scale(.94); }
+.c-btn svg { fill: currentColor; }
+.c-skip {
+  height: 34px;
+  min-width: 46px;
+  padding: 0 10px;
+  border-radius: 17px;
+  font-family: var(--serif-en);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  font-variant-numeric: lining-nums;
+  color: rgba(255,255,255,.9);
+}
+.c-skip:hover { background: rgba(255,255,255,.12); color: #fff; }
+.c-play {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #1a140c;
+  box-shadow: 0 4px 18px rgba(201,169,106,.35);
+}
+.c-play:hover { background: #d8bb80; }
+.c-play svg { width: 24px; height: 24px; }
+.c-play .i-play { margin-left: 3px; }
+.c-icon { width: 36px; height: 36px; border-radius: 50%; color: rgba(255,255,255,.85); }
+.c-icon:hover { background: rgba(255,255,255,.12); color: #fff; }
+.c-icon svg { width: 20px; height: 20px; }
+.c-play .i-pause, .screen.is-playing .c-play .i-play { display: none; }
+.screen.is-playing .c-play .i-pause { display: block; }
+.c-mute .i-muted, .screen.is-muted .c-mute .i-vol { display: none; }
+.screen.is-muted .c-mute .i-muted { display: block; }
+
+.c-seek {
+  display: block;
+  width: 100%;
+  height: 16px;
+  margin: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  --p: 0%;
+}
+.c-seek::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--accent) var(--p), rgba(255,255,255,.25) var(--p));
+}
+.c-seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -4.5px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(201,169,106,.25);
+}
+.c-seek::-moz-range-track { height: 3px; border-radius: 2px; background: rgba(255,255,255,.25); }
+.c-seek::-moz-range-progress { height: 3px; border-radius: 2px; background: var(--accent); }
+.c-seek::-moz-range-thumb { width: 12px; height: 12px; border: 0; border-radius: 50%; background: var(--accent); }
+
+.screen:fullscreen { display: flex; align-items: center; background: #000; }
+.screen:fullscreen video { width: 100%; height: 100%; object-fit: contain; }
+
+@media (max-width: 759px) {
+  .tap-layer { bottom: 76px; }
+  .controls { padding: 22px 10px 8px; }
+  .c-center { gap: 10px; }
+  .c-time { font-size: 13px; }
+  .c-right .c-time { margin-right: 2px; }
+  .c-skip { height: 30px; min-width: 40px; padding: 0 6px; font-size: 15px; }
+  .c-play { width: 40px; height: 40px; }
+  .c-play svg { width: 20px; height: 20px; }
+  .c-icon { width: 32px; height: 32px; }
+  .c-icon svg { width: 18px; height: 18px; }
+}
+
+/* スキップは丸い矢印のマークに戻す（2026-11-16 オーナー：「−5」「+5」の文字は分かりづらい）。時間は左下だけ */
+.c-skip { width: 40px; height: 40px; min-width: 0; padding: 0; border-radius: 50%; position: relative; }
+.c-skip svg { width: 30px; height: 30px; grid-area: 1 / 1; }
+.c-skip span {
+  grid-area: 1 / 1;
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  padding-top: 4px;
+  color: #fff;
+}
+@media (max-width: 759px) {
+  .c-skip { width: 36px; height: 36px; padding: 0; }
+  .c-skip svg { width: 26px; height: 26px; }
+  .c-skip span { font-size: 9px; padding-top: 3px; }
+}
+
+/* 作品のページ（2026-11-16）：番号なし、題名を動画の前に。あらすじと情報は動画の下に1列。
+   「作品一覧へ」は、上の文字（情報の最後の行）と下の文字（フッターの最初の行）までを同じ 40px に */
+.film-head { margin-bottom: 20px; }
+.film-head h1 {
+  font-family: var(--serif-ja);
+  font-weight: 600;
+  font-size: clamp(26px, 5vw, 34px);
+  line-height: 1.4;
+  margin: 0;
+}
+.film-head .en {
+  font-family: var(--serif-en);
+  color: var(--muted);
+  letter-spacing: .12em;
+  font-size: 16px;
+  margin: 4px 0 0;
+}
+.work-page .info { display: block; max-width: 760px; margin-top: 28px; }
+.work-page .film { padding-bottom: 40px; }
+.work-page .pager { border-top: 0; padding: 0 16px 40px; }
+.work-page footer { padding-top: 0; }
+.work-page footer p:first-child { margin-top: 0; }
+
+/* 「作品一覧に戻る」をボタンの形に（2026-11-16 オーナー：リンクだと分かりづらい） */
+.pager a.back-list {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 28px;
+  border: 1px solid rgba(201,169,106,.6);
+  border-radius: 999px;
+  color: var(--accent);
+  font-family: var(--serif-ja);
+  font-size: 15px;
+  letter-spacing: .08em;
+  transition: background .25s ease, color .25s ease;
+}
+.pager a.back-list:hover { background: var(--accent); color: #1a140c; border-color: var(--accent); }
+.pager a.back-list span { transition: transform .25s ease; }
+.pager a.back-list:hover span { transform: translateX(-4px); }
+.nowrap { white-space: nowrap; }
+
+/* LAST HOPE の題名（2026-11-16）：PC は1行。スマホは2行にして、2行目を「HOPE」の下から始めて段違いに */
+.title-lh .sub { white-space: nowrap; }
+@media (max-width: 759px) {
+  .title-lh .sub {
+    display: block;
+    padding-left: 2.75em;
+    margin-top: 2px;
+    font-size: .82em;
+    letter-spacing: .12em;
+  }
+}
+
+/* 作品のページの題名を中央寄せに（2026-11-16）。LAST HOPE はスマホの2行とも中央 */
+.film-head { text-align: center; }
+@media (max-width: 759px) {
+  .title-lh .sub { padding-left: 0; }
+}
+
+/* スマホの一覧：番号と題名を先に、そのあとに表紙（動画）（2026-11-16） */
+@media (max-width: 759px) {
+  .grid .card { display: flex; flex-direction: column; }
+  .grid .card .thumb { order: 2; }
+  .grid .card .no { margin-top: 0; }
+  .grid .card h2 { margin-bottom: 12px; }
+}
+
+/* スポットライトの光が画面の外にはみ出して、スマホで横にスクロールできてしまうのを防ぐ（2026-11-16） */
+html, body { overflow-x: hidden; }
+@supports (overflow-x: clip) {
+  html, body { overflow-x: clip; }
+}
+
+/* スマホの一覧：見出しの上下の余白を半分（76px → 38px）、作品と作品の間も半分（76px → 38px）（2026-11-16） */
+@media (max-width: 759px) {
+  .hero { padding-top: 38px; padding-bottom: 38px; }
+  .grid { gap: 38px; }
+}
+
+/* パソコン（トップページ）：フッターの2行（全ての作品は…／効果音…）が、上の作品の題名と下の POCKET FILMS の
+   ちょうど真ん中に来るように（2026-11-16）。題名 →30px→ 区切り線 →30px→ 2行 →60px→ POCKET FILMS */
+@media (min-width: 760px) {
+  body:not(.work-page) .grid { padding-bottom: 10px; } /* カードの下 20px と合わせて 30px */
+  body:not(.work-page) footer { padding-top: 30px; }
+  body:not(.work-page) footer p:first-child { margin-top: 0; margin-bottom: 60px; }
+}
+
+/* 作品のページ（2026-11-16）：「全ての作品は…／効果音…」と「作品一覧に戻る」の位置を入れ替え。
+   動画の上下の余白も少し広げた（題名との間 20→36px、あらすじとの間 28→40px） */
+.work-page .credit {
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 2;
+  margin: 0;
+  padding: 0 16px 40px;
+}
+.work-page footer { padding-top: 32px; }
+.work-page footer .footer-back { margin: 0; }
+.footer-back a.back-list {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 28px;
+  border: 1px solid rgba(201,169,106,.6);
+  border-radius: 999px;
+  color: var(--accent);
+  font-family: var(--serif-ja);
+  font-size: 15px;
+  letter-spacing: .08em;
+  text-decoration: none;
+  transition: background .25s ease, color .25s ease;
+}
+.footer-back a.back-list:hover { background: var(--accent); color: #1a140c; border-color: var(--accent); }
+.footer-back a.back-list span { transition: transform .25s ease; }
+.footer-back a.back-list:hover span { transform: translateX(-4px); }
+.film-head { margin-bottom: 36px; }
+.work-page .info { margin-top: 40px; }
+
+/* 作品のページ：「作品一覧に戻る」を、上の文字（効果音…）と下の文字（POCKET FILMS）のちょうど真ん中に（2026-11-16）
+   上：文字 →20px→ 区切り線(1px) →19px→ ボタン（合計 40px）／下：ボタン →40px→ POCKET FILMS */
+.work-page .credit { padding-bottom: 20px; }
+.work-page footer { padding-top: 19px; }
+.work-page footer .mark { margin-top: 40px; }
