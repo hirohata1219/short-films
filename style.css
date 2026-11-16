@@ -1092,3 +1092,18 @@ html, body { overflow-x: hidden; }
   .speaker-l { left: 8px; }
   .speaker-r { right: 8px; }
 }
+
+/* 2026-11-17：舞台の足元のライトを目立たないように（小さく・暗く） */
+.stage-floor {
+  background:
+    radial-gradient(circle, rgba(255,230,190,.55) 0 1.2px, rgba(255,200,120,.22) 2.5px, transparent 5px) 50% 100% / 64px 14px repeat-x,
+    linear-gradient(to bottom, #2a1410, #170a08 70%, #0e0605);
+}
+.stage-floor::before { background: linear-gradient(to top, rgba(255,200,120,.04), rgba(255,200,120,0)); }
+@media (max-width: 759px) {
+  .stage-floor {
+    background:
+      radial-gradient(circle, rgba(255,230,190,.55) 0 1px, rgba(255,200,120,.22) 2px, transparent 4px) 50% 100% / 40px 12px repeat-x,
+      linear-gradient(to bottom, #2a1410, #170a08 70%, #0e0605);
+  }
+}

@@ -338,11 +338,10 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     if (!rows.length) return;
     rows[rows.length - 1].y = H - rows[rows.length - 1].h;
     // 各列の左右の階段の位置（端から3席ぶん）
-    rows.forEach(r => {
-      r.sw = r.w * 0.9;               // 階段の幅
-      r.xL = 3 * r.w;                 // 左の階段の左端
-      r.xR = W - 3 * r.w - r.sw;      // 右の階段の左端
-    });
+    // 階段はまっすぐ縦に（どの列も同じ位置・同じ幅）。一番手前の列の3席ぶんを端からの距離にする
+    const SW = Math.round(d.wF * 0.75);
+    const XL = 3 * d.wF, XR = W - 3 * d.wF - SW;
+    rows.forEach(r => { r.sw = SW; r.xL = XL; r.xR = XR; });
 
     // 段（ステップ）の床：手前ほど高い段。段の縁に細い明かりの線
     rows.forEach((r, i) => {
@@ -381,8 +380,10 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
           const yy = y1 + (y2 - y1) * t, xx = xa + (xb - xa) * t, ww = wa + (wb - wa) * t;
           ctx.fillStyle = 'rgba(190,120,90,.35)';
           ctx.fillRect(xx + 1, yy, ww - 2, 1);
-          glow(xx + 3, yy + 1, Math.max(3, a.w * 0.08), .8);
-          glow(xx + ww - 3, yy + 1, Math.max(3, a.w * 0.08), .8);
+          if (t === 0) {   // 灯りは1列に1段だけ（前の半分）
+            glow(xx + 3, yy + 1, Math.max(3, a.w * 0.08), .8);
+            glow(xx + ww - 3, yy + 1, Math.max(3, a.w * 0.08), .8);
+          }
         }
       }
     };
@@ -392,7 +393,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     // 座席（奥の列から順に）。左右は3席ずつ、真ん中は階段の間に並べる
     rows.forEach((r, i) => {
       const rand = rng(1000 + i * 97);
-      const xs = [0, 1, 2].map(k => r.xL - 3 * r.w + k * r.w);
+      const xs = [0, 1, 2].map(k => r.xL - (k + 1) * r.w);   // 階段のすぐ外側から3席
       const cL = r.xL + r.sw, cR = r.xR, n = Math.floor((cR - cL) / r.w);
       const c0 = cL + ((cR - cL) - n * r.w) / 2;
       for (let k = 0; k < n; k++) xs.push(c0 + k * r.w);
