@@ -975,3 +975,48 @@ html, body { overflow-x: hidden; }
 }
 /* 客席の上でも情報の文字が読みやすいように、文字のまわりを少し暗く */
 .work-page .meta dt, .work-page .meta dd { text-shadow: 0 1px 2px #000, 0 0 8px rgba(0,0,0,.9); }
+
+/* 2026-11-17：客席は canvas で描く（約3分の1に観客）。
+   あらすじは読みやすい幅で真ん中に、完成〜効果音はパンフレットのような金の細い枠のカードに */
+.seats { background: none !important; }
+.seats-cv { display: block; }
+.work-page .info { max-width: none; margin-top: 40px; }
+.work-page .synopsis {
+  max-width: 680px;
+  margin: 0 auto;
+  font-size: 15px;
+  line-height: 2;
+}
+.work-page .meta {
+  position: relative;
+  max-width: 520px;
+  margin: 56px auto 0;
+  padding: 20px 28px;
+  grid-template-columns: 5em 1fr;
+  gap: 0 18px;
+  font-size: 14px;
+  color: rgba(236,230,220,.88);
+  background: rgba(14,6,8,.86);
+  border: 1px solid rgba(201,169,106,.5);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.6), inset 0 0 0 4px rgba(14,6,8,.86), inset 0 0 0 5px rgba(201,169,106,.18);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+.work-page .meta dt, .work-page .meta dd {
+  padding: 8px 0;
+  border-bottom: 1px dotted rgba(201,169,106,.22);
+  text-shadow: none;
+}
+.work-page .meta dt { color: var(--accent); letter-spacing: .1em; }
+.work-page .meta dt:last-of-type, .work-page .meta dd:last-of-type { border-bottom: 0; }
+@media (max-width: 759px) {
+  .work-page .synopsis { font-size: 14px; }
+  .work-page .meta {
+    margin-top: 40px;
+    padding: 12px 16px;
+    grid-template-columns: 4.6em 1fr;
+    gap: 0 12px;
+    font-size: 13px;
+  }
+}

@@ -231,16 +231,76 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   }, true);
 })();
 
-// 客席（2026-11-17）：あらすじと「完成」の行のちょうど真ん中から始まり、フッターまで続く。
-// 奥の2列 → 横の通路（足元の灯り）→ 手前の3列。手前ほど大きく、列は少しずつ横にずらす
+// 客席（2026-11-17）：あらすじと情報のカードのちょうど真ん中から始まり、フッターまで続く。
+// 奥の2列 → 横の通路（足元の灯り）→ 手前の3列。手前ほど大きく、1列ごとに半分ずらす。
+// 座席の約3分の1に観客が座っている（毎回同じ並びになるように、決まった乱数で選ぶ）
 (() => {
   const seats = document.querySelector('.seats');
   const syn = document.querySelector('.info .synopsis');
   const meta = document.querySelector('.info .meta');
   if (!seats || !syn || !meta) return;
-  // 列の設計（top は上からの位置、w は座席1つの幅。高さは幅の 5/6）
-  const PC = { rows: [[0, 64], [40, 76], [140, 94], [200, 108], [270, 124]], aisle: [92, 40], D: 373 };
-  const SP = { rows: [[0, 40], [26, 48], [92, 60], [130, 70], [176, 82]], aisle: [60, 26], D: 244 };
+  const cv = document.createElement('canvas');
+  cv.className = 'seats-cv';
+  seats.appendChild(cv);
+  const ctx = cv.getContext('2d');
+  // D は客席の最低の高さ
+  const PC = { D: 373 };
+  const SP = { D: 244 };
+  const rng = seed => () => {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+  const rr = (x, y, w, h, r) => {
+    ctx.beginPath();
+    ctx.moveTo(x, y + h);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h);
+    ctx.closePath();
+  };
+  const person = (cx, top, w, rand) => {
+    const r = w * (0.17 + rand() * 0.03);           // 頭の大きさに少し差をつける
+    const hy = top - r * (0.55 + rand() * 0.25);     // 背の高さにも少し差
+    const hx = cx + (rand() - 0.5) * w * 0.08;
+    // 肩
+    ctx.fillStyle = '#0b0506';
+    ctx.beginPath();
+    ctx.ellipse(hx, top + r * 0.55, w * 0.34, r * 1.15, 0, Math.PI, 0);
+    ctx.fill();
+    // 首と頭
+    ctx.fillRect(hx - r * 0.35, hy, r * 0.7, r * 1.4);
+    ctx.beginPath();
+    ctx.arc(hx, hy, r, 0, Math.PI * 2);
+    ctx.fill();
+    // スクリーンの光が頭の縁に少し当たる
+    ctx.strokeStyle = 'rgba(255,205,170,.16)';
+    ctx.lineWidth = Math.max(1, w * 0.02);
+    ctx.beginPath();
+    ctx.arc(hx, hy, r, Math.PI * 1.1, Math.PI * 1.9);
+    ctx.stroke();
+  };
+  const seat = (x, y, w, h) => {
+    const bw = w * 44 / 60, bx = x + w * 8 / 60, by = y + h * 4 / 50;
+    // ひじ掛け
+    ctx.fillStyle = '#180608';
+    rr(x + w * 2 / 60, y + h * 26 / 50, w * 6 / 60, h * 24 / 50, 2); ctx.fill();
+    rr(x + w * 52 / 60, y + h * 26 / 50, w * 6 / 60, h * 24 / 50, 2); ctx.fill();
+    // 背もたれ
+    ctx.fillStyle = '#260a0e';
+    rr(bx, by, bw, h - (by - y), w * 10 / 60); ctx.fill();
+    ctx.strokeStyle = '#521620';
+    ctx.lineWidth = Math.max(1.2, w * 2 / 60);
+    ctx.beginPath();
+    ctx.moveTo(bx, by + w * 10 / 60);
+    ctx.quadraticCurveTo(bx, by, bx + w * 10 / 60, by);
+    ctx.lineTo(bx + bw - w * 10 / 60, by);
+    ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + w * 10 / 60);
+    ctx.stroke();
+  };
   const place = () => {
     const d = innerWidth < 760 ? SP : PC;
     seats.style.marginTop = '';
@@ -248,25 +308,58 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     const natTop = seats.getBoundingClientRect().top;
     const start = (syn.getBoundingClientRect().bottom + meta.getBoundingClientRect().top) / 2;
     const gap = Math.max(0, natTop - start);
-    const H = Math.max(d.D, gap + 60);
+    const H = Math.max(d.D, gap + (d === SP ? 150 : 190)); // 情報のカードの下にも客席が見えるように
     seats.style.marginTop = -gap + 'px';
     seats.style.height = H + 'px';
-    const s = H / d.D; // 列の間隔だけを高さに合わせて伸ばす（座席の大きさは変えない）
-    const seat = getComputedStyle(seats).getPropertyValue('--seat').trim();
-    const layers = [];
-    d.rows.slice().reverse().forEach(([top, w], k) => {
+    const W = seats.clientWidth;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = W * dpr; cv.height = H * dpr;
+    cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    // 床
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(1, 'rgba(60,10,16,.35)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    // 列を高さに合わせて並べる：奥ほど小さく、手前ほど大きく。全体の約4割の所に横の通路
+    const wB = d === SP ? 40 : 64, wF = d === SP ? 82 : 124, aisleH = d === SP ? 26 : 40;
+    const rows = [];
+    let y = 0, ay = -1;
+    for (let k = 0; k < 40; k++) {
+      const w = Math.round(wB + (wF - wB) * Math.min(1, y / H));
       const h = Math.round(w * 5 / 6);
-      const y = k === 0 ? H - h : Math.round(top * s);   // 一番手前の列は下にそろえる
-      const shift = (d.rows.length - 1 - k) % 2 ? w / 2 : 0;    // 1列ごとに半分ずらす
-      layers.push(`${seat} calc(50% + ${shift}px) ${y}px / ${w}px ${h}px repeat-x`);
+      if (y + h > H) break;
+      rows.push([y, w, h]);
+      y += Math.round(h * 0.62);
+      if (ay < 0 && y > H * 0.36) { ay = y + Math.round(h * 0.25); y += aisleH + Math.round(h * 0.25); }
+    }
+    if (rows.length) { const last = rows[rows.length - 1]; last[0] = H - last[2]; } // 一番手前の列は下にそろえる
+    // 通路の床と足元の灯り
+    const ah = aisleH;
+    if (ay >= 0) {
+      ctx.fillStyle = 'rgba(70,18,26,.35)';
+      ctx.fillRect(0, ay, W, ah);
+      for (let x = W / 2 % 110; x < W; x += 110) {
+        const lg = ctx.createRadialGradient(x, ay + ah - 4, 0, x, ay + ah - 4, 5);
+        lg.addColorStop(0, 'rgba(255,205,130,.9)');
+        lg.addColorStop(.4, 'rgba(255,180,90,.3)');
+        lg.addColorStop(1, 'rgba(255,180,90,0)');
+        ctx.fillStyle = lg;
+        ctx.fillRect(x - 5, ay + ah - 9, 10, 10);
+      }
+    }
+    // 奥の列から順に描く（約3分の1に観客）
+    rows.forEach(([ry, w, h], i) => {
+      const shift = i % 2 ? w / 2 : 0;   // 1列ごとに半分ずらす
+      const rand = rng(1000 + i * 97);
+      let x0 = W / 2 + shift - w / 2;
+      x0 -= Math.ceil(x0 / w) * w;
+      for (let x = x0; x < W; x += w) {
+        if (rand() < 1 / 3) person(x + w / 2, ry + h * 4 / 50, w, rand);
+        seat(x, ry, w, h);
+      }
     });
-    const [ay, ah] = [Math.round(d.aisle[0] * s), d.aisle[1]];
-    // 通路の足元の灯り
-    layers.push(`radial-gradient(circle, rgba(255,200,120,.85) 0 1.5px, rgba(255,180,90,.25) 3px, transparent 5px) 50% ${ay + ah - 8}px / 110px 10px repeat-x`);
-    // 通路の床
-    layers.push(`linear-gradient(rgba(90,22,30,.35), rgba(50,12,18,.35)) 0 ${ay}px / 100% ${ah}px no-repeat`);
-    layers.push('linear-gradient(to bottom, rgba(0,0,0,0), rgba(60,10,16,.35))');
-    seats.style.background = layers.join(', ');
   };
   place();
   window.addEventListener('load', place);
