@@ -162,7 +162,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   };
   // 横長でない映像（16:9 など）には fill を付ける。iPhone の横画面のときだけ上下を切って画面いっぱいに（style.css）
   // 上下を切ると文字が欠ける場面（秒はカットの切れ目）：時計の CM の最後は全部見せる、マナー CM の最後は下側だけ切る
-  const FILL_ADJUST = { 'kestrelle.mp4': [13.95, 'adj-contain'], 'manner.mp4': [18.24, 'adj-top'] };
+  const FILL_ADJUST = { 'kestrelle.mp4': [13.95, 'adj-contain'], 'manner.mp4': [18.45, 'adj-top'] };
   const applyAdjust = t => {
     const a = FILL_ADJUST[(v.currentSrc || '').split('/').pop()];
     v.classList.toggle('adj-contain', !!a && a[1] === 'adj-contain' && t >= a[0]);
