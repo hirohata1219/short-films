@@ -249,7 +249,8 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   };
   // ロゴが終わったら、真っ暗なまま 6秒 → 本編を、映像と音をゆっくり（2秒）明るく・大きくしながら始める（2026-11-18 オーナー）
   // 2026-11-18 オーナー：ロゴのあと 真っ暗 3秒 → 注意書き（字幕だけ・無音。1秒で浮かび 4秒 → 1秒で消える）→ 真っ暗 5秒 → 本編
-  const N_BEFORE = 3000, N_IN = 1000, N_HOLD = 4000, N_OUT = 1000, N_AFTER = 5000, FADE = 2000;
+  // 2026-11-19 オーナー：本編の前の真っ暗を 2秒減らして 3秒に
+  const N_BEFORE = 3000, N_IN = 1000, N_HOLD = 4000, N_OUT = 1000, N_AFTER = 3000, FADE = 2000;
   const BLACK = N_BEFORE + N_IN + N_HOLD + N_OUT + N_AFTER;
   const cover = document.createElement('div');
   cover.className = 'fade-cover';
