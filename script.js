@@ -106,7 +106,10 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   const v = document.querySelector('.screen video');
   if (!v) return;
   const on = () => document.body.classList.add('lights-off');
-  const off = () => document.body.classList.remove('lights-off');
+  // CM が終わって次へ切り替わるときは、照明をつけない
+  // CM・ロゴから次へ切り替わるときと、本編が終わってエンドロールへ進むときは、照明をつけない
+  const sc = v.closest('.screen');
+  const off = () => { if (!(v.ended && (sc.classList.contains('pre-roll') || sc.querySelector('.credits')))) document.body.classList.remove('lights-off'); };
   v.addEventListener('play', on);
   v.addEventListener('pause', off);
   v.addEventListener('ended', off);
@@ -145,8 +148,180 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
     else if (v.webkitDisplayingFullscreen && v.webkitExitFullscreen) v.webkitExitFullscreen();
   };
+  // 上映前の CM（2026-11-18）：最初に再生を押すと CM を順に流し、終わるか「CM をとばす」で本編へ。
+  // 動画は1つのまま中身を入れ替える（iPhone でも続けて再生できるように）。ページを開くたびに毎回流す
+  // 2026-11-18：CM のあと、本編の前に映画会社のロゴ（data-intro）を流す。「CM をとばす」でもロゴは流す。ロゴの間は何も表示しない
+  const ads = (v.dataset.ads || '').split(/\s+/).filter(Boolean);
+  const intro = v.dataset.intro || '';
+  // CM ごとの「ふわっと始まる」長さ（ミリ秒）。2026-11-18 オーナー：時計の CM は 1.6秒、次の CM はその半分
+  const adFades = (v.dataset.adFades || '').split(/\s+/).filter(Boolean).map(Number);
+  const pre = [...ads.map((src, i) => ({ src, ad: true, fade: adFades[i] || 0 })), ...(intro ? [{ src: intro, ad: false, fade: 0 }] : [])];
+  // 音を 0 から 1 へ ms かけて上げる（requestAnimationFrame の時刻は少し前のことがあるので 0〜1 に収める）
+  const rampVolume = ms => {
+    const t0 = performance.now();
+    const step = () => {
+      const k = Math.max(0, Math.min(1, (performance.now() - t0) / ms));
+      v.volume = k;
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+  const filmSrc = v.querySelector('source').getAttribute('src');
+  const adLabel = $('.ad-label');
+  let preIdx = pre.length ? -1 : pre.length;   // -1＝まだ、0〜＝本編の前の何本目（CM・ロゴ）、pre.length＝本編
+  const inAd = () => screen.classList.contains('pre-roll');   // 本編の前（CM・ロゴ）の間
+  const playNow = () => { const p = v.play(); if (p && p.catch) p.catch(() => {}); };
+  const toFilm = () => {
+    preIdx = pre.length;
+    screen.classList.remove('pre-roll', 'ad-mode');
+    adLabel.textContent = '';
+    v.src = filmSrc;
+    playNow();
+  };
+  // 各 CM の前は 2秒、ロゴの前は 4秒、真っ暗にしてから始める（2026-11-18 オーナー）。暗い間に次の動画を読み込んでおく
+  const GAP_AD = 2000, GAP_INTRO = 4000;
+  let preTimer = null, waiting = false;
+  const startPre = i => {
+    clearTimeout(preTimer);
+    if (i >= pre.length) return toFilm();
+    preIdx = i;
+    screen.classList.add('pre-roll', 'black', 'cut');   // cut：暗い幕をすぐ出し、すぐ外す（CM・ロゴは頭からはっきり見せる）
+    document.body.classList.add('lights-off');
+    screen.classList.toggle('ad-mode', pre[i].ad);   // 「CM 1/2」と「CM をとばす」は CM の間だけ
+    v.removeAttribute('poster');   // 切り替えの間に本編の表紙が見えないように
+    adLabel.textContent = pre[i].ad ? `CM ${i + 1}/${ads.length}` : '';
+    v.src = pre[i].src;
+    waiting = true;
+    const fade = pre[i].fade;
+    preTimer = setTimeout(() => {
+      waiting = false;
+      if (fade) {
+        // ふわっと始める：映像は暗い幕を fade ミリ秒で外し、音も 0 から上げる
+        v.volume = 0;
+        v.addEventListener('playing', () => {
+          cover.style.transitionDuration = fade + 'ms';
+          screen.classList.remove('cut');
+          void cover.offsetWidth;   // cut を外したのを先に反映させてから幕を外す（ゆっくり消えるように）
+          screen.classList.remove('black');
+          rampVolume(fade);
+          setTimeout(() => { cover.style.transitionDuration = ''; }, fade + 100);
+        }, { once: true });
+      } else {
+        v.volume = 1;
+        screen.classList.remove('black');
+        setTimeout(() => screen.classList.remove('cut'), 100);
+      }
+      playNow();
+    }, pre[i].ad ? GAP_AD : GAP_INTRO);
+  };
+  // ロゴが終わったら、真っ暗なまま 6秒 → 本編を、映像と音をゆっくり（2秒）明るく・大きくしながら始める（2026-11-18 オーナー）
+  // 2026-11-18 オーナー：ロゴのあと 真っ暗 3秒 → 注意書き（字幕だけ・無音。1秒で浮かび 4秒 → 1秒で消える）→ 真っ暗 5秒 → 本編
+  const N_BEFORE = 3000, N_IN = 1000, N_HOLD = 4000, N_OUT = 1000, N_AFTER = 5000, FADE = 2000;
+  const BLACK = N_BEFORE + N_IN + N_HOLD + N_OUT + N_AFTER;
+  const cover = document.createElement('div');
+  cover.className = 'fade-cover';
+  screen.insertBefore(cover, screen.querySelector('.tap-layer'));
+  const notice = document.createElement('p');
+  notice.className = 'pre-notice';
+  notice.innerHTML = '本作品は生成 AI を用いて制作されたフィクションです。<br>実在の人物・団体・出来事とは関係ありません。';
+  screen.insertBefore(notice, screen.querySelector('.tap-layer'));
+  const blackThenFilm = () => {
+    waiting = true;
+    preIdx = pre.length;
+    screen.classList.add('black');
+    screen.classList.remove('ad-mode');
+    adLabel.textContent = '';
+    v.src = filmSrc;   // 暗い間に本編を読み込んでおく（止まったまま）
+    setTimeout(() => notice.classList.add('on'), N_BEFORE);
+    setTimeout(() => notice.classList.remove('on'), N_BEFORE + N_IN + N_HOLD);
+    setTimeout(() => {
+      screen.classList.remove('pre-roll');
+      v.volume = 0;
+      v.addEventListener('playing', () => {
+        screen.classList.remove('black');   // CSS で 2秒かけて明るくなる
+        rampVolume(FADE);
+        waiting = false;
+      }, { once: true });
+      playNow();
+    }, BLACK);
+  };
+  // エンドロール（2026-11-18）：本編が終わったら、左に文字が流れ、右に作品の場面、作品の曲を約15秒
+  // → 黒い画面の右下に作品名と「© 年 POCKET FILMS」がゆっくり出て 4.5秒 → ゆっくり消える → 照明がつき全画面が戻る
+  const credits = screen.querySelector('.credits');
+  const music = screen.querySelector('.cr-music');
+  // 2026-11-18 オーナー「もっとゆっくり、歌詞が終わる所で真ん中に着く」→ 16秒かけて真ん中へ（曲は歌詞の終わりの 16秒前から流す）、5秒止まって見せる
+  const ROLL = 21000, ROLL_MOVE = 16000;
+  let post = false, timers = [], rollAnim = null, unlocked = false;
+  const later = (ms, fn) => timers.push(setTimeout(fn, ms));
+  const clearLater = () => { timers.forEach(clearTimeout); timers = []; };
+  // iPhone などは、あとで曲を鳴らすには最初に押したときに一度鳴らしておく必要がある（音なしで鳴らしてすぐ止める）
+  const unlockMusic = () => {
+    if (!music || unlocked) return;
+    unlocked = true;
+    music.muted = true;
+    const p = music.play();
+    if (p && p.then) p.then(() => { music.pause(); music.currentTime = 0; music.muted = false; }).catch(() => { music.muted = false; });
+  };
+  const fadeMusic = ms => {
+    if (!music || music.paused) return;
+    const v0 = music.volume, t0 = performance.now();
+    const step = () => {
+      const k = Math.min(1, (performance.now() - t0) / ms);
+      music.volume = Math.max(0, v0 * (1 - k));
+      if (k < 1) requestAnimationFrame(step); else { music.pause(); music.volume = 1; }
+    };
+    requestAnimationFrame(step);
+  };
+  const scenes = credits ? [...credits.querySelectorAll('.cr-scenes img')] : [];
+  const endShow = () => {   // 真っ暗になって終わり → 照明がつき、全画面が戻る
+    clearLater();
+    if (music) { music.pause(); music.currentTime = 0; music.volume = 1; }
+    if (rollAnim) { rollAnim.cancel(); rollAnim = null; }
+    exitFull();
+    document.body.classList.remove('lights-off');
+    screen.classList.remove('post-roll');
+    credits.classList.remove('final', 'final-on');
+    scenes.forEach(x => x.classList.remove('on'));
+    post = false;
+    v.currentTime = 0;
+  };
+  const showFinal = () => {   // 最後の黒い画面：1秒の黒 → 1.5秒で浮かぶ → 4.5秒 → 1.5秒で消える → 1秒の黒
+    clearLater();
+    credits.classList.add('final');
+    later(1000, () => credits.classList.add('final-on'));
+    later(1000 + 1500 + 4500, () => credits.classList.remove('final-on'));
+    later(1000 + 1500 + 4500 + 1500 + 1000, endShow);
+  };
+  const startCredits = () => {
+    post = true;
+    screen.classList.add('post-roll');
+    const roll = credits.querySelector('.cr-roll'), inner = credits.querySelector('.cr-inner');
+    later(4000, () => {   // 本編が終わってから真っ暗 4秒（2026-11-18 オーナー）
+      if (music) { music.currentTime = 0; music.volume = 1; const p = music.play(); if (p && p.catch) p.catch(() => {}); }
+      // 文字は下からゆっくり上がって、全体が上下の真ん中に来たら止まる（2026-11-18 オーナー。前は上まで流れきっていた）
+      rollAnim = inner.animate([{ transform: `translateY(${roll.clientHeight}px)` }, { transform: `translateY(${(roll.clientHeight - inner.offsetHeight) / 2}px)` }],
+        { duration: ROLL_MOVE, easing: 'cubic-bezier(.3,.6,.4,1)', fill: 'forwards' });
+      scenes.forEach((im, i) => later(i * ROLL / scenes.length, () => { scenes.forEach(x => x.classList.remove('on')); im.classList.add('on'); }));
+      later(ROLL, showFinal);
+    });
+  };
+  if (credits) credits.querySelector('.cr-skip').addEventListener('click', () => { fadeMusic(600); showFinal(); });
+  v.addEventListener('ended', () => {
+    if (!inAd()) { if (credits && !post) startCredits(); return; }
+    preIdx + 1 >= pre.length ? blackThenFilm() : startPre(preIdx + 1);
+  });
+  // CM をとばす → ロゴへ（ロゴがなければ本編へ）
+  $('.ad-skip').addEventListener('click', () => { startPre(ads.length); show(); });
+
   // 再生を始めるときは全画面にする。止めるときはそのまま
   const toggle = () => {
+    if (waiting || post) return;   // ロゴのあとの暗い 2秒の間と、エンドロールの間は、押しても何もしない
+    unlockMusic();
+    if (v.paused && preIdx === -1) {
+      startPre(0);
+      enterFull();
+      return;
+    }
     if (v.paused) {
       const p = v.play();
       enterFull();
@@ -156,6 +331,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     }
   };
   const skip = s => {
+    if (inAd() || post) return;   // CM・ロゴ・エンドロールの間は 5秒戻る・進むを使わない
     v.currentTime = Math.min(Math.max(0, v.currentTime + s), v.duration || 0);
     show();
   };
@@ -174,6 +350,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   $('.c-mute').addEventListener('click', () => { v.muted = !v.muted; show(); });
   $('.c-full').addEventListener('click', () => { isFull() ? exitFull() : enterFull(); show(); });
   seek.addEventListener('input', () => {
+    if (inAd()) return;
     seeking = true;
     if (v.duration) v.currentTime = seek.value / 1000 * v.duration;
     update();
@@ -187,6 +364,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     show();
   });
   v.addEventListener('pause', () => {
+    if (v.ended && inAd()) return;   // CM から次へ切り替わるときは、再生バーを出さない
     screen.classList.remove('is-playing');
     $('.c-play').setAttribute('aria-label', '再生');
     show();

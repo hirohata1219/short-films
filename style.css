@@ -546,6 +546,126 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
 .c-seek::-moz-range-progress { height: 3px; border-radius: 2px; background: var(--accent); }
 .c-seek::-moz-range-thumb { width: 12px; height: 12px; border: 0; border-radius: 50%; background: var(--accent); }
 
+/* ---------- 上映前の CM（2026-11-18） ---------- */
+/* スクリーンの形は本編のまま。形の違う CM は左右（または上下）が黒くなる */
+.screen video { object-fit: contain; }
+/* 左上の「CM 1/2」 */
+.ad-label {
+  display: none;
+  position: absolute;
+  left: 16px; top: 12px;
+  margin: 0;
+  padding: 2px 10px;
+  border-radius: 3px;
+  background: rgba(0,0,0,.5);
+  color: rgba(255,255,255,.85);
+  font-size: 12px;
+  letter-spacing: .1em;
+  line-height: 1.8;
+  z-index: 4;
+  pointer-events: none;
+}
+/* 右下の「CM をとばす」（最初から押せる。2本ともとばして本編へ） */
+.ad-skip {
+  display: none;
+  position: absolute;
+  right: 20px; bottom: 100px;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px 8px 18px;
+  border: 1px solid rgba(255,255,255,.55);
+  border-radius: 3px;
+  background: rgba(0,0,0,.6);
+  color: #fff;
+  font-family: var(--sans);
+  font-size: 14px;
+  letter-spacing: .06em;
+  cursor: pointer;
+  z-index: 4;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .2s ease, border-color .2s ease;
+}
+.ad-skip svg { width: 16px; height: 16px; fill: currentColor; }
+.ad-skip:hover { background: rgba(0,0,0,.8); border-color: #fff; }
+.screen.ad-mode .ad-label { display: block; }
+.screen.ad-mode .ad-skip { display: inline-flex; }
+/* CM の間は、シークと 5秒戻る・進むを隠す */
+/* ロゴのあと真っ暗で 2秒 → 本編が 2秒かけて明るくなる（script.js が .black を付け外し） */
+.fade-cover { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 1; transition: opacity 2s ease; }
+.screen.black .fade-cover { opacity: 1; transition: none; }
+.screen.cut .fade-cover { transition: none; }   /* CM・ロゴの前の暗さは、すぐ消す */
+/* ロゴのあとの注意書き（字幕だけ・無音）。1秒で浮かび、1秒で消える */
+.pre-notice {
+  position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%);
+  margin: 0; padding: 0 6cqw; z-index: 2; pointer-events: none;
+  text-align: center; font-family: var(--serif-ja); font-size: max(11px, 1.45cqw); line-height: 2.1;
+  letter-spacing: .08em; color: rgba(236,230,220,.88);
+  opacity: 0; transition: opacity 1s ease;
+}
+.pre-notice.on { opacity: 1; }
+.screen.pre-roll .c-seek,
+.screen.pre-roll .c-skip { visibility: hidden; }   /* CM とロゴの間 */
+/* ページの一番下の表記 */
+.cm-credit { font-size: 11px; color: rgba(236,230,220,.55); }
+
+/* ---------- エンドロール（2026-11-18） ---------- */
+/* 文字の大きさはスクリーンの幅に合わせる（cqw）。全画面でも小さい画面でも同じ割合 */
+.screen { container-type: inline-size; }
+.credits {
+  position: absolute; inset: 0; z-index: 6;
+  display: flex; align-items: stretch;
+  background: #000; opacity: 0; pointer-events: none;
+  transition: opacity .5s ease;   /* 本編の終わりから 0.5秒で真っ暗に */
+}
+.screen.post-roll .credits { opacity: 1; pointer-events: auto; }
+/* 左：下からゆっくり上がり、まとまり全体が上下の真ん中で止まる（上下の端はなめらかに消える）。21:9 の作品でも高さの 3/4 に収まる大きさ */
+.cr-roll {
+  position: relative; flex: 0 0 54%; overflow: hidden;
+  -webkit-mask-image: linear-gradient(transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(transparent, #000 7%, #000 93%, transparent);
+  transition: opacity .8s ease;
+}
+.cr-inner {
+  position: absolute; left: 0; right: 0; top: 0;
+  transform: translateY(100cqw);   /* 流れ始めるまでは画面の外 */
+  text-align: center; color: #e8e2d6; font-family: var(--serif-ja);
+  padding: 0 3cqw;
+}
+.cr-title { margin: 0 0 2.2cqw; font-size: 2cqw; letter-spacing: .12em; color: #f1dfb4; }
+.cr-list {
+  display: grid; grid-template-columns: 1fr 1.25fr; gap: .55cqw 2cqw;
+  margin: 0; font-size: 1.25cqw; line-height: 1.5; text-align: left;
+}
+.cr-list dt { text-align: right; color: var(--accent); font-size: 1cqw; letter-spacing: .1em; padding-top: .2cqw; }
+.cr-list dd { margin: 0; }
+.cr-note { margin: 2.4cqw 0 0; font-size: 1.05cqw; line-height: 1.8; color: rgba(232,226,214,.75); }
+/* 右：作品の場面が順に入れかわる */
+.cr-scenes { position: relative; flex: 1; transition: opacity .8s ease; }
+.cr-scenes img {
+  position: absolute; left: 6%; top: 50%; width: 84%; aspect-ratio: 16 / 9; object-fit: cover;
+  transform: translateY(-50%) scale(1.04); opacity: 0;
+  transition: opacity 1s ease, transform 4s linear;
+  box-shadow: 0 0 0 1px rgba(201,169,106,.25);
+}
+.cr-scenes img.on { opacity: 1; transform: translateY(-50%) scale(1); }
+/* 右下の「エンドロールをとばす」（小さく） */
+.cr-skip {
+  position: absolute; right: 1.6cqw; bottom: 1.6cqw;
+  padding: .35em .8em; border: 1px solid rgba(255,255,255,.4); border-radius: 3px;
+  background: rgba(0,0,0,.5); color: rgba(255,255,255,.8);
+  font-family: var(--sans); font-size: max(10px, 1cqw); cursor: pointer;
+}
+.cr-skip:hover { color: #fff; border-color: #fff; }
+/* 最後の黒い画面：右下に作品名と「© 年 POCKET FILMS」 */
+.credits.final .cr-roll, .credits.final .cr-scenes, .credits.final .cr-skip { opacity: 0; pointer-events: none; }
+.cr-final {
+  position: absolute; right: 5cqw; bottom: 4.5cqw; text-align: right;
+  opacity: 0; transition: opacity 1.5s ease; pointer-events: none;
+}
+.credits.final-on .cr-final { opacity: 1; }
+.cr-final-title { margin: 0 0 .6cqw; font-family: var(--serif-ja); font-size: 1.7cqw; letter-spacing: .1em; color: #ece6dc; }
+.cr-final-c { margin: 0; font-family: var(--serif-en); font-size: 1.4cqw; letter-spacing: .2em; color: var(--accent); }
+
 /* スマホの再生ボタン（動画の真ん中。半透明で縁だけ金色）。PC では出さない */
 .big-play { display: none; }
 
@@ -731,6 +851,10 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
   .big-play svg { width: 30px; height: 30px; fill: currentColor; margin-left: 4px; }
   .big-play:active { transform: scale(.94); }
   .screen.is-playing .big-play { opacity: 0; pointer-events: none; }
+  /* CM（スマホは再生バーがないので、右下の隅に小さく） */
+  .ad-label { left: 8px; top: 6px; padding: 1px 7px; font-size: 10px; }
+  .ad-skip { right: 8px; bottom: 8px; padding: 4px 8px 4px 10px; font-size: 11px; gap: 4px; }
+  .ad-skip svg { width: 12px; height: 12px; }
   .stage-floor {
     height: 30px;
     margin: 0 -6px;
