@@ -359,6 +359,28 @@ body:not(.work-page) footer .credit-note { margin: 0 0 60px; }
 .screen video { display: block; width: 100%; height: auto; background: #000; }
 .screen:fullscreen { display: flex; align-items: center; background: #000; }
 .screen:fullscreen video { width: 100%; height: 100%; object-fit: contain; }
+/* iPhone の全画面の代わり（2026-11-18）：画面いっぱいに広げ、縦向きなら 90度回して横画面で見せる */
+html.pseudo-full-on, html.pseudo-full-on body { overflow: hidden; overscroll-behavior: none; }
+.screen.pseudo-full {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center;
+  border-radius: 0; box-shadow: none;
+}
+.screen.pseudo-full video { width: 100%; height: 100%; object-fit: contain; }
+/* 2026-11-18 オーナー：16:9 の映像（CM・ロゴ・本編2本）は上下を少し切って画面いっぱいに。LAST HOPE（横長）はそのまま */
+.screen.pseudo-full video.fill { object-fit: cover; }
+/* 切ると文字が欠ける場面だけ見せ方を変える（script.js の FILL_ADJUST）。時計の CM の最後（黒地の時計と注意書き）は全部見せ、マナー CM の最後（盗撮は犯罪です。）は下側だけ切る */
+.screen.pseudo-full video.fill.adj-contain { object-fit: contain; }
+.screen.pseudo-full video.fill.adj-top { object-position: 50% 0%; }
+/* iPhone の横画面では「CM をスキップ」を少し上に（時計の CM の最後の注意書きに重ならないように） */
+.screen.pseudo-full .ad-skip { bottom: 14%; right: 12px; }
+@media (orientation: portrait) {
+  .screen.pseudo-full {
+    right: auto; bottom: auto; top: 0; left: 100%;
+    width: 100vh; width: 100dvh; height: 100vw;
+    transform-origin: 0 0; transform: rotate(90deg);
+  }
+}
 
 /* 再生すると客席の照明が落ちる */
 body::before {
@@ -549,23 +571,7 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
 /* ---------- 上映前の CM（2026-11-18） ---------- */
 /* スクリーンの形は本編のまま。形の違う CM は左右（または上下）が黒くなる */
 .screen video { object-fit: contain; }
-/* 左上の「CM 1/2」 */
-.ad-label {
-  display: none;
-  position: absolute;
-  left: 16px; top: 12px;
-  margin: 0;
-  padding: 2px 10px;
-  border-radius: 3px;
-  background: rgba(0,0,0,.5);
-  color: rgba(255,255,255,.85);
-  font-size: 12px;
-  letter-spacing: .1em;
-  line-height: 1.8;
-  z-index: 4;
-  pointer-events: none;
-}
-/* 右下の「CM をとばす」（最初から押せる。2本ともとばして本編へ） */
+/* 右下の「CM をとばす」（CM が始まって 5秒後に出る。2本ともとばしてロゴへ） */
 .ad-skip {
   display: none;
   position: absolute;
@@ -587,8 +593,7 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
 }
 .ad-skip svg { width: 16px; height: 16px; fill: currentColor; }
 .ad-skip:hover { background: rgba(0,0,0,.8); border-color: #fff; }
-.screen.ad-mode .ad-label { display: block; }
-.screen.ad-mode .ad-skip { display: inline-flex; }
+.screen.ad-mode.can-skip .ad-skip { display: inline-flex; }
 /* CM の間は、シークと 5秒戻る・進むを隠す */
 /* ロゴのあと真っ暗で 2秒 → 本編が 2秒かけて明るくなる（script.js が .black を付け外し） */
 .fade-cover { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 1; transition: opacity 2s ease; }
@@ -648,16 +653,8 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
   box-shadow: 0 0 0 1px rgba(201,169,106,.25);
 }
 .cr-scenes img.on { opacity: 1; transform: translateY(-50%) scale(1); }
-/* 右下の「エンドロールをとばす」（小さく） */
-.cr-skip {
-  position: absolute; right: 1.6cqw; bottom: 1.6cqw;
-  padding: .35em .8em; border: 1px solid rgba(255,255,255,.4); border-radius: 3px;
-  background: rgba(0,0,0,.5); color: rgba(255,255,255,.8);
-  font-family: var(--sans); font-size: max(10px, 1cqw); cursor: pointer;
-}
-.cr-skip:hover { color: #fff; border-color: #fff; }
 /* 最後の黒い画面：右下に作品名と「© 年 POCKET FILMS」 */
-.credits.final .cr-roll, .credits.final .cr-scenes, .credits.final .cr-skip { opacity: 0; pointer-events: none; }
+.credits.final .cr-roll, .credits.final .cr-scenes { opacity: 0; pointer-events: none; }
 .cr-final {
   position: absolute; right: 5cqw; bottom: 4.5cqw; text-align: right;
   opacity: 0; transition: opacity 1.5s ease; pointer-events: none;
@@ -852,7 +849,6 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
   .big-play:active { transform: scale(.94); }
   .screen.is-playing .big-play { opacity: 0; pointer-events: none; }
   /* CM（スマホは再生バーがないので、右下の隅に小さく） */
-  .ad-label { left: 8px; top: 6px; padding: 1px 7px; font-size: 10px; }
   .ad-skip { right: 8px; bottom: 8px; padding: 4px 8px 4px 10px; font-size: 11px; gap: 4px; }
   .ad-skip svg { width: 12px; height: 12px; }
   .stage-floor {

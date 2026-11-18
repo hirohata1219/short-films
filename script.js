@@ -136,14 +136,41 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     clearTimeout(timer);
     if (!v.paused) timer = setTimeout(() => screen.classList.remove('show-ui'), 2500);
   };
-  const isFull = () => document.fullscreenElement || document.webkitFullscreenElement || v.webkitDisplayingFullscreen;
+  // 2026-11-18 オーナー：iPhone は再生を押したら自動で横画面に（縦では見られなくてよい）。
+  // iPhone は要素の全画面ができず、本体の全画面プレーヤーでは CM をとばす・注意書き・エンドロールが見えないので、
+  // スクリーンを画面いっぱいに広げ、縦向きのときは 90度回して横画面にする（.pseudo-full、style.css）
+  const canFull = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+  const isFull = () => document.fullscreenElement || document.webkitFullscreenElement || v.webkitDisplayingFullscreen || screen.classList.contains('pseudo-full');
   const enterFull = () => {
     if (isFull()) return;
-    if (screen.requestFullscreen) screen.requestFullscreen().catch(() => {});
+    if (!canFull) {
+      screen.classList.add('pseudo-full');
+      document.documentElement.classList.add('pseudo-full-on');
+      return;
+    }
+    const lockLand = () => { try { const o = window.screen.orientation; if (o && o.lock) o.lock('landscape').catch(() => {}); } catch (e) {} };   // Android は全画面のあと横に固定
+    if (screen.requestFullscreen) screen.requestFullscreen().then(lockLand).catch(() => {});
     else if (screen.webkitRequestFullscreen) screen.webkitRequestFullscreen();
-    else if (v.webkitEnterFullscreen) v.webkitEnterFullscreen(); // iPhone は本体の全画面プレーヤーで
   };
+  // 横長でない映像（16:9 など）には fill を付ける。iPhone の横画面のときだけ上下を切って画面いっぱいに（style.css）
+  // 上下を切ると文字が欠ける場面（秒はカットの切れ目）：時計の CM の最後は全部見せる、マナー CM の最後は下側だけ切る
+  const FILL_ADJUST = { 'kestrelle.mp4': [12.95, 'adj-contain'], 'manner.mp4': [18.24, 'adj-top'] };
+  const applyAdjust = t => {
+    const a = FILL_ADJUST[(v.currentSrc || '').split('/').pop()];
+    v.classList.toggle('adj-contain', !!a && a[1] === 'adj-contain' && t >= a[0]);
+    v.classList.toggle('adj-top', !!a && a[1] === 'adj-top' && t >= a[0]);
+  };
+  v.addEventListener('loadedmetadata', () => { v.classList.toggle('fill', v.videoWidth / v.videoHeight < 2); applyAdjust(0); });
+  if (v.requestVideoFrameCallback) {   // コマごとに合わせる（カットの切れ目でぴったり変わるように）
+    const onFrame = (now, meta) => { applyAdjust(meta.mediaTime); v.requestVideoFrameCallback(onFrame); };
+    v.requestVideoFrameCallback(onFrame);
+  } else v.addEventListener('timeupdate', () => applyAdjust(v.currentTime));
   const exitFull = () => {
+    if (screen.classList.contains('pseudo-full')) {
+      screen.classList.remove('pseudo-full');
+      document.documentElement.classList.remove('pseudo-full-on');
+      return;
+    }
     if (document.fullscreenElement) document.exitFullscreen();
     else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
     else if (v.webkitDisplayingFullscreen && v.webkitExitFullscreen) v.webkitExitFullscreen();
@@ -167,14 +194,12 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     requestAnimationFrame(step);
   };
   const filmSrc = v.querySelector('source').getAttribute('src');
-  const adLabel = $('.ad-label');
   let preIdx = pre.length ? -1 : pre.length;   // -1＝まだ、0〜＝本編の前の何本目（CM・ロゴ）、pre.length＝本編
   const inAd = () => screen.classList.contains('pre-roll');   // 本編の前（CM・ロゴ）の間
   const playNow = () => { const p = v.play(); if (p && p.catch) p.catch(() => {}); };
   const toFilm = () => {
     preIdx = pre.length;
     screen.classList.remove('pre-roll', 'ad-mode');
-    adLabel.textContent = '';
     v.src = filmSrc;
     playNow();
   };
@@ -187,9 +212,8 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     preIdx = i;
     screen.classList.add('pre-roll', 'black', 'cut');   // cut：暗い幕をすぐ出し、すぐ外す（CM・ロゴは頭からはっきり見せる）
     document.body.classList.add('lights-off');
-    screen.classList.toggle('ad-mode', pre[i].ad);   // 「CM 1/2」と「CM をとばす」は CM の間だけ
+    screen.classList.toggle('ad-mode', pre[i].ad);   // 「CM をとばす」は CM の間だけ（2026-11-18：「CM 1/2」の表示はなくした）
     v.removeAttribute('poster');   // 切り替えの間に本編の表紙が見えないように
-    adLabel.textContent = pre[i].ad ? `CM ${i + 1}/${ads.length}` : '';
     v.src = pre[i].src;
     waiting = true;
     const fade = pre[i].fade;
@@ -230,7 +254,6 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     preIdx = pre.length;
     screen.classList.add('black');
     screen.classList.remove('ad-mode');
-    adLabel.textContent = '';
     v.src = filmSrc;   // 暗い間に本編を読み込んでおく（止まったまま）
     setTimeout(() => notice.classList.add('on'), N_BEFORE);
     setTimeout(() => notice.classList.remove('on'), N_BEFORE + N_IN + N_HOLD);
@@ -305,10 +328,15 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
       later(ROLL, showFinal);
     });
   };
-  if (credits) credits.querySelector('.cr-skip').addEventListener('click', () => { fadeMusic(600); showFinal(); });
+  // 2026-11-18 オーナー：「エンドロールをとばす」は PC もスマホもなくした
   v.addEventListener('ended', () => {
     if (!inAd()) { if (credits && !post) startCredits(); return; }
     preIdx + 1 >= pre.length ? blackThenFilm() : startPre(preIdx + 1);
+  });
+  // 「CM をとばす」は CM が始まって 5秒たってから出す（2026-11-18 オーナー。PC もスマホも）。一度出たら次の CM でも出したまま
+  const SKIP_AFTER = 5;
+  v.addEventListener('timeupdate', () => {
+    if (inAd() && preIdx >= 0 && preIdx < ads.length && (preIdx > 0 || v.currentTime >= SKIP_AFTER)) screen.classList.add('can-skip');
   });
   // CM をとばす → ロゴへ（ロゴがなければ本編へ）
   $('.ad-skip').addEventListener('click', () => { startPre(ads.length); show(); });
