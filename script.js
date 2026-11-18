@@ -210,6 +210,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     clearTimeout(preTimer);
     if (i >= pre.length) return toFilm();
     preIdx = i;
+    hushMusic();
     screen.classList.add('pre-roll', 'black', 'cut');   // cut：暗い幕をすぐ出し、すぐ外す（CM・ロゴは頭からはっきり見せる）
     document.body.classList.add('lights-off');
     screen.classList.toggle('ad-mode', pre[i].ad);   // 「CM をとばす」は CM の間だけ（2026-11-18：「CM 1/2」の表示はなくした）
@@ -252,6 +253,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   const blackThenFilm = () => {
     waiting = true;
     preIdx = pre.length;
+    hushMusic();
     screen.classList.add('black');
     screen.classList.remove('ad-mode');
     v.src = filmSrc;   // 暗い間に本編を読み込んでおく（止まったまま）
@@ -281,10 +283,14 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   const unlockMusic = () => {
     if (!music || unlocked) return;
     unlocked = true;
+    // 2026-11-19：前は「鳴り始めてから止める」にしていたが、iPhone では止まらず CM 1本目に曲が流れた。
+    // 押したその場で play と pause を続けて呼び、エンドロールまで音を消したままにする
     music.muted = true;
     const p = music.play();
-    if (p && p.then) p.then(() => { music.pause(); music.currentTime = 0; music.muted = false; }).catch(() => { music.muted = false; });
+    if (p && p.catch) p.catch(() => {});
+    music.pause();
   };
+  const hushMusic = () => { if (music && !post) { music.pause(); music.muted = true; } };   // 念のため：本編の前・本編の間は曲を止めておく
   const fadeMusic = ms => {
     if (!music || music.paused) return;
     const v0 = music.volume, t0 = performance.now();
@@ -320,7 +326,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     screen.classList.add('post-roll');
     const roll = credits.querySelector('.cr-roll'), inner = credits.querySelector('.cr-inner');
     later(4000, () => {   // 本編が終わってから真っ暗 4秒（2026-11-18 オーナー）
-      if (music) { music.currentTime = 0; music.volume = 1; const p = music.play(); if (p && p.catch) p.catch(() => {}); }
+      if (music) { music.currentTime = 0; music.volume = 1; music.muted = false; const p = music.play(); if (p && p.catch) p.catch(() => {}); }
       // 文字は下からゆっくり上がって、全体が上下の真ん中に来たら止まる（2026-11-18 オーナー。前は上まで流れきっていた）
       rollAnim = inner.animate([{ transform: `translateY(${roll.clientHeight}px)` }, { transform: `translateY(${(roll.clientHeight - inner.offsetHeight) / 2}px)` }],
         { duration: ROLL_MOVE, easing: 'cubic-bezier(.3,.6,.4,1)', fill: 'forwards' });
