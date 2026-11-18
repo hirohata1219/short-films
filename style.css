@@ -879,3 +879,11 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
   .info { z-index: 6; }
   .seats { height: 100px; }
 }
+
+/* 2026-11-19 オーナー：iPhone だけ、動画の下に「回転ロックを解除して横にして再生」の案内（黄色・太字。script.js で入れる） */
+.rotate-note {
+  position: relative; z-index: 2;
+  margin: 18px 0 0; text-align: center;
+  color: #ffd23f; font-weight: 700; font-size: 15px; line-height: 1.6;
+  text-shadow: 0 1px 3px rgba(0,0,0,.8);
+}

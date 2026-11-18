@@ -140,6 +140,14 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   // iPhone は要素の全画面ができず、本体の全画面プレーヤーでは CM をとばす・注意書き・エンドロールが見えないので、
   // スクリーンを画面いっぱいに広げ、縦向きのときは 90度回して横画面にする（.pseudo-full、style.css）
   const canFull = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+  // 2026-11-19 オーナー：iPhone は縦のままだと上のバー（時刻・電波・電池）が消せないので、動画の下に黄色の太字で案内を出す
+  if (!canFull && matchMedia('(pointer: coarse)').matches) {
+    const note = document.createElement('p');
+    note.className = 'rotate-note';
+    note.textContent = '※必ず画面の回転ロックを解除し、スマホを横にして再生してください。';
+    const stage = screen.closest('.proscenium') || screen;
+    stage.insertAdjacentElement('afterend', note);
+  }
   const isFull = () => document.fullscreenElement || document.webkitFullscreenElement || v.webkitDisplayingFullscreen || screen.classList.contains('pseudo-full');
   const enterFull = () => {
     if (isFull()) return;
