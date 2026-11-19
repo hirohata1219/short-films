@@ -656,36 +656,38 @@ body.lights-off .screen.curtains-open .sc-curtains { opacity: 0; }
 .screen { container-type: inline-size; }
 .credits {
   position: absolute; inset: 0; z-index: 6;
-  display: flex; align-items: stretch;
+  display: flex; align-items: stretch; justify-content: center; gap: 3cqw;   /* 2026-11-19 オーナー：文字と写真を真ん中に寄せてくっつける */
   background: #000; opacity: 0; pointer-events: none;
   transition: opacity .5s ease;   /* 本編の終わりから 0.5秒で真っ暗に */
 }
 .screen.post-roll .credits { opacity: 1; pointer-events: auto; }
 /* 左：下から一定の速さで上がり、画面の上へ消えていく（上下の端はなめらかに消える）。
    2026-11-19 オーナー「文字が小さすぎる。可能な限り大きく」→ 役目を上、名前を下にして真ん中にそろえ、前の約2倍の大きさに */
+/* 2026-11-19 オーナー：左の列の幅は文字（題名も含む）のいちばん広い行ちょうど。流れる文字と題名を同じ升目に重ね、広いほうに合わせる */
 .cr-roll {
-  position: relative; flex: 0 0 58%; overflow: hidden;
+  position: relative; flex: 0 0 auto; max-width: 60cqw; overflow: hidden;
+  display: grid; grid-template: 100% / auto;
   -webkit-mask-image: linear-gradient(transparent, #000 7%, #000 93%, transparent);
   mask-image: linear-gradient(transparent, #000 7%, #000 93%, transparent);
   transition: opacity .8s ease;
 }
 .cr-inner {
-  position: absolute; left: 0; right: 0; top: 0;
+  grid-area: 1 / 1; align-self: start; position: relative;
   transform: translateY(100cqw);   /* 流れ始めるまでは画面の外 */
   text-align: center; color: #e8e2d6; font-family: var(--serif-ja);
-  padding: 0 2.5cqw;
+  padding: 0 1cqw;
 }
 /* 題名（2026-11-19）：流さずに、左側の真ん中にその場で出す。slow＝--fade 秒でゆっくり、bang＝一瞬で大きく光って出る */
 .cr-roll > .cr-title {
-  position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%);
-  padding: 0 2.5cqw; text-align: center; font-family: var(--serif-ja); opacity: 0;
+  grid-area: 1 / 1; align-self: center; position: relative;
+  padding: 0 1cqw; text-align: center; font-family: var(--serif-ja); opacity: 0;
 }
 .cr-title.show-slow { opacity: 1; transition: opacity var(--fade, 2.5s) ease; }
 .cr-title.show-bang { opacity: 1; animation: cr-bang .9s cubic-bezier(.2,.8,.2,1) both; }
 @keyframes cr-bang {
-  0%   { opacity: 0; transform: translateY(-50%) scale(1.35); filter: blur(6px) brightness(2.2); text-shadow: 0 0 2cqw rgba(255,240,200,.9); }
-  12%  { opacity: 1; transform: translateY(-50%) scale(1.04); filter: blur(0) brightness(2); text-shadow: 0 0 2.4cqw rgba(255,240,200,.95); }
-  100% { opacity: 1; transform: translateY(-50%) scale(1); filter: none; text-shadow: 0 0 0 rgba(255,240,200,0); }
+  0%   { opacity: 0; transform: scale(1.35); filter: blur(6px) brightness(2.2); text-shadow: 0 0 2cqw rgba(255,240,200,.9); }
+  12%  { opacity: 1; transform: scale(1.04); filter: blur(0) brightness(2); text-shadow: 0 0 2.4cqw rgba(255,240,200,.95); }
+  100% { opacity: 1; transform: scale(1); filter: none; text-shadow: 0 0 0 rgba(255,240,200,0); }
 }
 .cr-title { margin: 0; font-size: 3.6cqw; line-height: 1.45; letter-spacing: .1em; color: #f1dfb4; text-wrap: balance; }
 .cr-list { margin: 0; }
@@ -693,9 +695,9 @@ body.lights-off .screen.curtains-open .sc-curtains { opacity: 0; }
 .cr-list dd { margin: 0 0 3.4cqw; font-size: 2.8cqw; line-height: 1.45; }
 .cr-note { margin: 4.5cqw 0 0; font-size: 2.1cqw; line-height: 1.8; color: rgba(232,226,214,.8); }
 /* 右：作品の場面が順に入れかわる */
-.cr-scenes { position: relative; flex: 1; transition: opacity .8s ease; }
+.cr-scenes { position: relative; flex: 0 0 37cqw; transition: opacity .8s ease; }
 .cr-scenes img {
-  position: absolute; left: 4%; top: 50%; width: 88%; aspect-ratio: 16 / 9; object-fit: cover;
+  position: absolute; left: 0; top: 50%; width: 100%; aspect-ratio: 16 / 9; object-fit: cover;
   transform: translateY(-50%) scale(1.04); opacity: 0;
   transition: opacity 1s ease, transform 4s linear;
   box-shadow: 0 0 0 1px rgba(201,169,106,.25);
