@@ -162,7 +162,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   };
   // 横長でない映像（16:9 など）には fill を付ける。iPhone の横画面のときだけ上下を切って画面いっぱいに（style.css）
   // 上下を切ると文字が欠ける場面（秒はカットの切れ目）：時計の CM の最後は全部見せる、マナー CM の最後は下側だけ切る
-  const FILL_ADJUST = { 'kestrelle.mp4': [13.95, 'adj-contain'], 'manner.mp4': [17.409, 'adj-top'] };
+  const FILL_ADJUST = { 'kestrelle.mp4': [13.95, 'adj-contain'], 'manner.mp4': [17.992, 'adj-top'] };
   const applyAdjust = t => {
     const a = FILL_ADJUST[(v.currentSrc || '').split('/').pop()];
     v.classList.toggle('adj-contain', !!a && a[1] === 'adj-contain' && t >= a[0]);
@@ -270,7 +270,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   const inFilm = () => !inAd() && preIdx === pre.length && !post;
   // 本編の終わりのマーク（2026-11-19 オーナー）：本編の最後の 2.6秒、右下にふわっと（作品ごとのデザインは style.css）
   const endMark = screen.querySelector('.end-mark');
-  const END_LEAD = 2.6, END_FADE = 0.7;
+  const END_LEAD = 2.6, END_FADE = parseFloat(v.dataset.endFade) || 0.7;   // data-end-fade：本編の最後に暗くなる秒（2026-11-20 小さなやさしさは 2.0）
   // 暗さは CSS の動き（遅れることがある）に任せず、映像の残り時間から毎コマ決める
   let endRaf = null;
   const applyEnd = () => {
