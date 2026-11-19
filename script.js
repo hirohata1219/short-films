@@ -162,7 +162,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   };
   // 横長でない映像（16:9 など）には fill を付ける。iPhone の横画面のときだけ上下を切って画面いっぱいに（style.css）
   // 上下を切ると文字が欠ける場面（秒はカットの切れ目）：時計の CM の最後は全部見せる、マナー CM の最後は下側だけ切る
-  const FILL_ADJUST = { 'kestrelle.mp4': [13.95, 'adj-contain'], 'manner.mp4': [17.075, 'adj-top'] };
+  const FILL_ADJUST = { 'kestrelle.mp4': [13.95, 'adj-contain'], 'manner.mp4': [17.283, 'adj-top'] };
   const applyAdjust = t => {
     const a = FILL_ADJUST[(v.currentSrc || '').split('/').pop()];
     v.classList.toggle('adj-contain', !!a && a[1] === 'adj-contain' && t >= a[0]);
@@ -263,9 +263,32 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   const inFilm = () => !inAd() && preIdx === pre.length && !post;
   // 本編の終わりのマーク（2026-11-19 オーナー）：本編の最後の 2.6秒、右下にふわっと（作品ごとのデザインは style.css）
   const endMark = screen.querySelector('.end-mark');
-  const END_LEAD = 2.6;
+  const END_LEAD = 2.6, END_FADE = 0.7;
+  // 暗さは CSS の動き（遅れることがある）に任せず、映像の残り時間から毎コマ決める
+  let endRaf = null;
+  const applyEnd = () => {
+    if (post || !inFilm()) return false;
+    const k = Math.max(0, Math.min(1, (END_FADE - (v.duration - v.currentTime)) / END_FADE));
+    cover.style.transition = 'none'; cover.style.opacity = k;
+    if (endMark && k > 0) { endMark.style.transition = 'none'; endMark.style.opacity = 1 - k; }
+    return true;
+  };
+  const endTick = () => {
+    endRaf = null;
+    if (applyEnd() && !v.paused && !v.ended) endRaf = requestAnimationFrame(endTick);
+  };
+  const clearEndFade = () => {
+    if (endRaf) { cancelAnimationFrame(endRaf); endRaf = null; }
+    cover.style.transition = cover.style.opacity = '';
+    if (endMark) endMark.style.transition = endMark.style.opacity = '';
+  };
   v.addEventListener('timeupdate', () => {
     if (endMark && !post) endMark.classList.toggle('on', inFilm() && v.duration - v.currentTime <= END_LEAD);
+    // 2026-11-19 オーナー：本編の最後は、題名の映像と右下のマークを同時に消していく（最後の 0.7秒で一緒に暗く）
+    if (!post && inFilm()) {
+      if (v.duration - v.currentTime <= END_FADE + 0.4) { applyEnd(); if (!endRaf) endRaf = requestAnimationFrame(endTick); }
+      else clearEndFade();
+    }
     notice.classList.toggle('on', inFilm() && FILM_OFF > NOTICE_AT + NOTICE_HOLD && v.currentTime >= NOTICE_AT && v.currentTime < NOTICE_AT + 1 + NOTICE_HOLD);
   });
   const blackThenFilm = () => {
@@ -323,6 +346,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     clearLater();
     screen.classList.remove('is-playing', 'film-paused');
     if (endMark) endMark.classList.remove('on');
+    clearEndFade();
     if (music) { music.pause(); music.currentTime = 0; music.volume = 1; }
     if (rollAnim) { rollAnim.cancel(); rollAnim = null; }
     exitFull();
@@ -369,6 +393,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   };
   // 2026-11-18 オーナー：「エンドロールをとばす」は PC もスマホもなくした
   v.addEventListener('ended', () => {
+    if (!inAd() && credits) { cover.style.transition = 'none'; cover.style.opacity = 1; if (endMark) endMark.style.opacity = 0; }
     if (!inAd()) { if (credits && !post) startCredits(); return; }
     preIdx + 1 >= pre.length ? blackThenFilm() : startPre(preIdx + 1);
   });
@@ -436,6 +461,8 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     // CM から次へ切り替わるときと、本編が終わってエンドロールへ進むときは、再生ボタンも再生バーも出さない
     // （2026-11-19 オーナー：iPhone で本編の終わりに一瞬再生ボタンが出ていた）
     if (v.ended && (inAd() || credits)) return;
+    // 2026-11-19 オーナー「本編の冒頭に再生ボタンなどが一瞬出る」→ 次の動画へ入れ替える間（真っ暗の間）の pause では何も出さない
+    if (waiting) return;
     screen.classList.remove('is-playing');
     // 2026-11-19 オーナー：本編を止めたら、スマホでも再生バー（位置・時間・音）を出す。タップで再生すると消える
     screen.classList.toggle('film-paused', inFilm() && !waiting);

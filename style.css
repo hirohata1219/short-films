@@ -454,7 +454,7 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
 .tap-layer {
   position: absolute;
   left: 0; right: 0; top: 0;
-  bottom: 88px;
+  bottom: 0;   /* 再生バーは止めたときだけ出るので、下の端までタップで再生・停止（バーが出ている間はバーが手前） */
   background: transparent;
   border: 0;
   padding: 0;
@@ -475,6 +475,10 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
   transition: opacity .35s ease;
 }
 .screen.show-ui .controls { opacity: 1; pointer-events: auto; }
+/* 2026-11-19 オーナー：再生バー・時間・音のボタンは、本編を止めたときだけ（PC もスマホも）。CM・ロゴの間は出さない */
+.screen.show-ui:not(.film-paused) .controls { opacity: 0; pointer-events: none; }
+.screen.film-paused .controls { opacity: 1; pointer-events: auto; }
+.screen.pre-roll .controls { display: none !important; }
 .c-row {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
