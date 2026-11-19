@@ -458,6 +458,8 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
 .screen:fullscreen .sc-curtains,
 .screen.pseudo-full .sc-curtains { display: none; }
 .screen.curtains-open .sc-hint  { opacity: 0; }
+/* 見終わって幕が閉じるときは、閉じきってから「上映する」を浮かべる（開くときはすぐ消える） */
+.screen:not(.curtains-open) .sc-hint { transition-delay: 2.9s; }
 .screen.curtains-open .sc-curtains { pointer-events: none; }
 .screen.curtains-gone .sc-curtains { display: none; }
 /* 幕が閉じている間は、再生バーと再生ボタンを隠す */
@@ -659,7 +661,7 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
   text-align: center; color: #e8e2d6; font-family: var(--serif-ja);
   padding: 0 2.5cqw;
 }
-.cr-title { margin: 0 0 5.5cqw; font-size: 3.6cqw; line-height: 1.45; letter-spacing: .1em; color: #f1dfb4; text-wrap: balance; }
+.cr-title { margin: 0; font-size: 3.6cqw; line-height: 1.45; letter-spacing: .1em; color: #f1dfb4; text-wrap: balance; }
 .cr-list { margin: 0; }
 .cr-list dt { color: var(--accent); font-size: 1.9cqw; letter-spacing: .14em; margin: 0 0 .7cqw; }
 .cr-list dd { margin: 0 0 3.4cqw; font-size: 2.8cqw; line-height: 1.45; }

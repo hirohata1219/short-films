@@ -357,7 +357,9 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     scenes.forEach(x => x.classList.remove('on'));
     post = false;
     // 2026-11-19 オーナー：見終わったら幕が左右から閉まり、最初の状態（表紙・「上映する」）に戻る。もう一度上映すると CM から
-    screen.classList.remove('curtains-open', 'curtains-gone', 'can-skip', 'film-paused');
+    screen.classList.remove('curtains-gone', 'can-skip', 'film-paused');
+    // 全画面から元の画面に戻ってから 0.8秒おいて、左右の幕が真ん中へ閉じていく（開くときの逆。閉じきってから「上映する」が浮かぶ）
+    setTimeout(() => { if (!post && preIdx === -1) screen.classList.remove('curtains-open'); }, 800);
     preIdx = pre.length ? -1 : pre.length;
     waiting = false;
     if (posterSrc) v.setAttribute('poster', posterSrc);
@@ -381,10 +383,18 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
       if (started) return;
       started = true;
       later(ROLL_START, () => {
-        const dur = Math.max(5000, BANG - 300 - ROLL_START);
-        rollAnim = inner.animate([{ transform: `translateY(${roll.clientHeight}px)` }, { transform: `translateY(${-inner.offsetHeight}px)` }],
+        // 2026-11-19 オーナー：速さは今のまま（前の「題名が先頭で、全部が上へ流れきる」のと同じ速さ）。題名は最後に遅れて下から流れてきて、
+        // 左側の上下の真ん中で止まり、そのまま決めの音で次の画面（右下の作品名と ©）へ
+        const R = roll.clientHeight, title = inner.querySelector('.cr-title');
+        const all = Math.max(5000, BANG - 300 - ROLL_START);
+        title.style.marginTop = '0px';
+        const speed = (R + inner.offsetHeight + screen.clientWidth * 0.055) / all;   // 1ミリ秒に進む px（前と同じ速さ。前は題名の下に 5.5cqw の間があった）
+        title.style.marginTop = Math.max(0, R / 2 - title.offsetHeight / 2 + R * 0.05) + 'px';   // スタッフの文字が上へ消えきってから題名が真ん中に来る間
+        const endY = R / 2 - (title.offsetTop + title.offsetHeight / 2);
+        const dur = Math.min((R - endY) / speed, all - 1000);                  // 少なくとも 1秒は止まって見せる
+        rollAnim = inner.animate([{ transform: `translateY(${R}px)` }, { transform: `translateY(${endY}px)` }],
           { duration: dur, easing: 'linear', fill: 'forwards' });
-        scenes.forEach((im, i) => later(i * dur / scenes.length, () => { scenes.forEach(x => x.classList.remove('on')); im.classList.add('on'); }));
+        scenes.forEach((im, i) => later(i * all / scenes.length, () => { scenes.forEach(x => x.classList.remove('on')); im.classList.add('on'); }));
       });
       later(BANG, showFinal);
     };
