@@ -449,8 +449,14 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
 .sc-hint-main { font-family: var(--serif-ja); font-size: 20px; letter-spacing: .3em; padding-left: .3em; }
 .sc-hint-sub { font-size: 11px; letter-spacing: .1em; color: rgba(236,230,220,.75); }
 .sc-curtains:hover .sc-hint { background: rgba(40,10,14,.75); }
-.screen.curtains-open .sc-left  { transform: translateX(-100%); }
-.screen.curtains-open .sc-right { transform: translateX(100%); }
+/* 2026-11-19 オーナー：開いた幕は消さずに、左右の端にたたまれて残る（ひだが詰まって見える）。見終わると左右から閉まる */
+.sc-left  { transform-origin: 0 50%; }
+.sc-right { transform-origin: 100% 50%; }
+.screen.curtains-open .sc-left,
+.screen.curtains-open .sc-right { transform: scaleX(.12); }
+/* 全画面で見ている間は、たたんだ幕も映像にかからないように出さない */
+.screen:fullscreen .sc-curtains,
+.screen.pseudo-full .sc-curtains { display: none; }
 .screen.curtains-open .sc-hint  { opacity: 0; }
 .screen.curtains-open .sc-curtains { pointer-events: none; }
 .screen.curtains-gone .sc-curtains { display: none; }
@@ -678,8 +684,21 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
 .cr-final-title { margin: 0 0 1cqw; font-family: var(--serif-ja); font-size: 3.4cqw; letter-spacing: .1em; color: #ece6dc; }
 .cr-final-c { margin: 0; font-family: var(--serif-en); font-size: 2.5cqw; letter-spacing: .2em; color: var(--accent); }
 
-/* スマホの再生ボタン（動画の真ん中。半透明で縁だけ金色）。PC では出さない */
-.big-play { display: none; }
+/* 再生ボタン（動画の真ん中。半透明で縁だけ金色）。2026-11-19 オーナー：PC にも出す（幕が開いたあと、止めたとき） */
+.big-play {
+  display: grid; place-items: center;
+  position: absolute; left: 50%; top: 50%;
+  width: 84px; height: 84px; margin: -42px 0 0 -42px;
+  border: 2px solid var(--accent); border-radius: 50%;
+  background: rgba(0,0,0,.3); color: var(--accent);
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  z-index: 4; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: opacity .3s ease, transform .15s ease, background .2s ease;
+}
+.big-play svg { width: 38px; height: 38px; fill: currentColor; margin-left: 5px; }
+.big-play:hover { background: rgba(0,0,0,.5); }
+.big-play:active { transform: scale(.94); }
+.screen.is-playing .big-play, .screen.pre-roll .big-play { opacity: 0; pointer-events: none; }
 
 /* 舞台の床（手前の縁に控えめな足元のライト）と左右の小さなスピーカー */
 .stage-floor {

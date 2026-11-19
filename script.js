@@ -202,6 +202,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     requestAnimationFrame(step);
   };
   const filmSrc = v.querySelector('source').getAttribute('src');
+  const posterSrc = v.getAttribute('poster');
   // 2026-11-19 オーナー：本編の動画の頭に、黒い画面で曲だけを流す部分（約10秒）が入っている。その長さ（秒）。
   // 再生バーの時間と位置は、この後ろ（本編の絵が始まる所）を 0:00 として数える
   const FILM_OFF = parseFloat(v.dataset.filmStart) || 0;
@@ -355,7 +356,13 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     credits.classList.remove('final', 'final-on');
     scenes.forEach(x => x.classList.remove('on'));
     post = false;
-    v.currentTime = 0;
+    // 2026-11-19 オーナー：見終わったら幕が左右から閉まり、最初の状態（表紙・「上映する」）に戻る。もう一度上映すると CM から
+    screen.classList.remove('curtains-open', 'curtains-gone', 'can-skip', 'film-paused');
+    preIdx = pre.length ? -1 : pre.length;
+    waiting = false;
+    if (posterSrc) v.setAttribute('poster', posterSrc);
+    v.src = filmSrc;
+    show();
   };
   const showFinal = () => {   // 決めの音で文字と場面が消え、右下に作品名が 1.5秒で浮かぶ → 4.5秒 → 1.5秒で消える → 1秒の黒
     clearLater();
@@ -498,8 +505,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   if (sub && matchMedia('(hover: none)').matches) sub.textContent = 'タップで幕が開きます';
   const open = () => {
     if (screen.classList.contains('curtains-open')) return;
-    screen.classList.add('curtains-open');
-    setTimeout(() => screen.classList.add("curtains-gone"), 3300);
+    screen.classList.add('curtains-open');   // 開いた幕は左右の端にたたまれて残る（2026-11-19。前は 3.3秒後に消していた）
   };
   btn.addEventListener('click', open);
   // 幕が閉じている間のスペースキーは、再生ではなく幕を開ける
@@ -778,28 +784,4 @@ document.querySelectorAll('.card .thumb img').forEach(img => {
     m.setAttribute('content', base + ', minimum-scale=1');
     setTimeout(() => m.setAttribute('content', base), 400);
   });
-})();
-
-// 2026-11-19 調べる用：アドレスの最後に ?check を付けて開くと、左上に画面の幅・倍率・文字の大きさを出す（iPhone の回転の拡大の原因を調べるため）
-(() => {
-  if (!/[?&]check/.test(location.search)) return;
-  const box = document.createElement('pre');
-  box.style.cssText = 'position:fixed;left:4px;top:4px;z-index:99999;margin:0;padding:6px 8px;background:rgba(0,0,0,.82);color:#0f0;font:12px/1.35 monospace;pointer-events:none;white-space:pre';
-  document.body.appendChild(box);
-  const log = [];
-  const snap = () => {
-    const vv = window.visualViewport, d = document.documentElement, card = document.querySelector('.card'), h2 = document.querySelector('.card h2'), th = document.querySelector('.card .thumb');
-    return [
-      '向き ' + (innerWidth > innerHeight ? '横' : '縦') + '  ' + innerWidth + '×' + innerHeight,
-      '倍率 ' + (vv ? vv.scale.toFixed(2) + '  見えている幅 ' + Math.round(vv.width) : '-'),
-      'ページ幅 ' + d.clientWidth + ' / 中身 ' + d.scrollWidth + ' / body ' + document.body.scrollWidth,
-      'カード幅 ' + (card ? Math.round(card.getBoundingClientRect().width) : '-') + '  表紙 ' + (th ? Math.round(th.getBoundingClientRect().width) + '×' + Math.round(th.getBoundingClientRect().height) : '-'),
-      '題名の文字 ' + (h2 ? getComputedStyle(h2).fontSize : '-') + '  番号 ' + (document.querySelector('.no') ? getComputedStyle(document.querySelector('.no')).fontSize : '-'),
-      'dpr ' + devicePixelRatio + '  ' + (/CriOS/.test(navigator.userAgent) ? 'Chrome' : /Line\//.test(navigator.userAgent) ? 'LINE' : /Safari/.test(navigator.userAgent) ? 'Safari' : 'その他'),
-    ].join('\n');
-  };
-  let last = '';
-  const draw = () => { const now = snap(); if (now.split('\n')[0] !== last.split('\n')[0]) log.unshift(now.split('\n')[0] + ' に変わった'); last = now; box.textContent = now + '\n--\n' + log.slice(0, 4).join('\n'); };
-  draw();
-  setInterval(draw, 300);
 })();
