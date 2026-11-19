@@ -334,7 +334,8 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   const credits = screen.querySelector('.credits');
   const music = screen.querySelector('.cr-music');
   const BANG = credits ? (parseFloat(credits.dataset.bang) || 25) * 1000 : 0;
-  const ROLL_START = 4000;   // 本編が終わってから真っ暗 4秒で文字が流れ始める（2026-11-18 オーナー）
+  // 本編が終わってから真っ暗 4秒で文字が流れ始める（2026-11-18 オーナー）。2026-11-20：作品ごとに .credits の data-roll（秒）で変えられる（小さなやさしさ 1秒）
+  const ROLL_START = credits && credits.dataset.roll ? parseFloat(credits.dataset.roll) * 1000 : 4000;
   let post = false, timers = [], rollAnim = null, unlocked = false, joinTimer = null, crT0 = 0;
   const later = (ms, fn) => timers.push(setTimeout(fn, ms));
   const laterC = (ms, fn) => later(Math.max(0, crT0 + ms - performance.now()), fn);   // 本編が終わってから ms の時に
