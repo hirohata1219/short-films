@@ -258,7 +258,9 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   };
   // ロゴが終わったら、真っ暗なまま 3秒 → 本編の動画を再生（2026-11-19 オーナー）。
   // 動画の頭は黒い画面で曲だけ（小さく始まる）。その間に注意書きが 1秒で浮かび 4秒 → 1秒で消え、曲だけ少し流れて本編の絵へ
-  const N_BEFORE = 3000, NOTICE_AT = 1, NOTICE_HOLD = 4;
+  const N_BEFORE = 3000, NOTICE_HOLD = 4;
+  // 注意書きが浮かび始める秒（data-notice-at）。2026-11-19 オーナー（小さなやさしさ）：前後の真っ暗が同じ長さになる真ん中に。なければ 1秒
+  const NOTICE_AT = parseFloat(v.dataset.noticeAt) || 1;
   const cover = document.createElement('div');
   cover.className = 'fade-cover';
   screen.insertBefore(cover, screen.querySelector('.tap-layer'));
@@ -299,8 +301,16 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
         joinTimer = setTimeout(() => { joinTimer = null; if (!post && inFilm() && !v.paused && filmLeft() <= 0.1) toCredits(); }, Math.max(0, filmLeft() * 1000));
       }
     }
-    notice.classList.toggle('on', inFilm() && FILM_OFF > NOTICE_AT + NOTICE_HOLD && v.currentTime >= NOTICE_AT && v.currentTime < NOTICE_AT + 1 + NOTICE_HOLD);
+    noticeTick();
   });
+  // 注意書きは timeupdate（0.25秒おき）では遅れるので、次に出す／消す時刻までのタイマーをかける（timeupdate のたびにかけ直す）（2026-11-19）
+  let noticeRaf = null;
+  function noticeTick() {
+    clearTimeout(noticeRaf); noticeRaf = null;
+    const t = v.currentTime, end = NOTICE_AT + 1 + NOTICE_HOLD;
+    notice.classList.toggle('on', inFilm() && FILM_OFF > NOTICE_AT + NOTICE_HOLD && t >= NOTICE_AT && t < end);
+    if (inFilm() && !v.paused && t < end) noticeRaf = setTimeout(noticeTick, ((t < NOTICE_AT ? NOTICE_AT : end) - t) * 1000 / (v.playbackRate || 1) + 5);
+  }
   const blackThenFilm = () => {
     waiting = true;
     preIdx = pre.length;
