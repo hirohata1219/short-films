@@ -17,6 +17,9 @@
 * { box-sizing: border-box; }
 html, body { overflow-x: hidden; }               /* スポットライトの光で横にスクロールしないように */
 @supports (overflow-x: clip) { html, body { overflow-x: clip; } }
+/* 2026-11-19 オーナー：スマホを横にして縦に戻すと、一覧の番号・題名・表紙が大きいまま戻らない → 文字の自動拡大を止め、横にはみ出さないように */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html, body { overflow-x: clip; }
 body {
   margin: 0;
   background: var(--bg);
@@ -609,7 +612,8 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
 }
 .pre-notice.on { opacity: 1; }
 .screen.pre-roll .c-seek,
-.screen.pre-roll .c-skip { visibility: hidden; }   /* CM とロゴの間 */
+.screen.pre-roll .c-time,
+.screen.pre-roll .c-skip { visibility: hidden; }   /* CM とロゴの間（2026-11-19 オーナー：ロゴの始まりに秒数が出ていた → 時間も出さない） */
 /* ページの一番下の表記 */
 .cm-credit { font-size: 11px; color: rgba(236,230,220,.55); }
 
