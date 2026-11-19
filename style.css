@@ -17,6 +17,7 @@
 * { box-sizing: border-box; }
 html, body { overflow-x: hidden; }               /* スポットライトの光で横にスクロールしないように */
 @supports (overflow-x: clip) { html, body { overflow-x: clip; } }
+@supports not (overflow: clip) { .card::before { left: 0; right: 0; } }
 /* 2026-11-19 オーナー：スマホを横にして縦に戻すと、一覧の番号・題名・表紙が大きいまま戻らない → 文字の自動拡大を止め、横にはみ出さないように */
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 html, body { overflow-x: clip; }
@@ -69,8 +70,8 @@ footer .mark {
 .dust {
   position: fixed;
   inset: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;    /* 100vw だとスクロールバーの分だけ横にはみ出す */
+  height: 100%;
   pointer-events: none;
   z-index: -1;
   animation: dust-in 3s 1s ease both;
@@ -136,6 +137,8 @@ footer .mark {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 32px;
+  /* 2026-11-19：スポットライトの光（.card::before）が左右に画面の外まではみ出し、iPhone で回転すると拡大されたままになった → 一覧の中で切る */
+  overflow-x: clip;
 }
 .card {
   position: relative;
@@ -200,7 +203,7 @@ footer .mark {
   content: "";
   position: absolute;
   left: -12%;
-  right: -12%;
+  right: -12%;   /* はみ出しは .grid で切る。切れない古いブラウザは下の @supports で内側に */
   top: -40%;
   height: 120%;
   background: radial-gradient(ellipse 50% 60% at 50% 30%, rgba(255,222,170,.18), transparent 70%);

@@ -764,3 +764,18 @@ document.querySelectorAll('.card .thumb img').forEach(img => {
   img.addEventListener('load', done);
   img.addEventListener('error', done);
 });
+
+// 2026-11-19 オーナー：iPhone で横→縦に戻すと拡大されたままになる → 向きが変わったら、倍率を一度 1 に固定してから戻す（念のため）
+(() => {
+  const m = document.querySelector('meta[name="viewport"]');
+  if (!m) return;
+  const base = m.getAttribute('content');
+  let land = innerWidth > innerHeight;
+  addEventListener('resize', () => {
+    const now = innerWidth > innerHeight;
+    if (now === land) return;
+    land = now;
+    m.setAttribute('content', base + ', minimum-scale=1');
+    setTimeout(() => m.setAttribute('content', base), 400);
+  });
+})();
