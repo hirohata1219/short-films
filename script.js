@@ -162,7 +162,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   };
   // 横長でない映像（16:9 など）には fill を付ける。iPhone の横画面のときだけ上下を切って画面いっぱいに（style.css）
   // 上下を切ると文字が欠ける場面（秒はカットの切れ目）：時計の CM の最後は全部見せる、マナー CM の最後は下側だけ切る
-  const FILL_ADJUST = { 'kestrelle.mp4': [13.95, 'adj-contain'], 'manner.mp4': [17.492, 'adj-top'] };
+  const FILL_ADJUST = { 'kestrelle.mp4': [13.95, 'adj-contain'], 'manner.mp4': [17.409, 'adj-top'] };
   const applyAdjust = t => {
     const a = FILL_ADJUST[(v.currentSrc || '').split('/').pop()];
     v.classList.toggle('adj-contain', !!a && a[1] === 'adj-contain' && t >= a[0]);
@@ -778,4 +778,28 @@ document.querySelectorAll('.card .thumb img').forEach(img => {
     m.setAttribute('content', base + ', minimum-scale=1');
     setTimeout(() => m.setAttribute('content', base), 400);
   });
+})();
+
+// 2026-11-19 調べる用：アドレスの最後に ?check を付けて開くと、左上に画面の幅・倍率・文字の大きさを出す（iPhone の回転の拡大の原因を調べるため）
+(() => {
+  if (!/[?&]check/.test(location.search)) return;
+  const box = document.createElement('pre');
+  box.style.cssText = 'position:fixed;left:4px;top:4px;z-index:99999;margin:0;padding:6px 8px;background:rgba(0,0,0,.82);color:#0f0;font:12px/1.35 monospace;pointer-events:none;white-space:pre';
+  document.body.appendChild(box);
+  const log = [];
+  const snap = () => {
+    const vv = window.visualViewport, d = document.documentElement, card = document.querySelector('.card'), h2 = document.querySelector('.card h2'), th = document.querySelector('.card .thumb');
+    return [
+      '向き ' + (innerWidth > innerHeight ? '横' : '縦') + '  ' + innerWidth + '×' + innerHeight,
+      '倍率 ' + (vv ? vv.scale.toFixed(2) + '  見えている幅 ' + Math.round(vv.width) : '-'),
+      'ページ幅 ' + d.clientWidth + ' / 中身 ' + d.scrollWidth + ' / body ' + document.body.scrollWidth,
+      'カード幅 ' + (card ? Math.round(card.getBoundingClientRect().width) : '-') + '  表紙 ' + (th ? Math.round(th.getBoundingClientRect().width) + '×' + Math.round(th.getBoundingClientRect().height) : '-'),
+      '題名の文字 ' + (h2 ? getComputedStyle(h2).fontSize : '-') + '  番号 ' + (document.querySelector('.no') ? getComputedStyle(document.querySelector('.no')).fontSize : '-'),
+      'dpr ' + devicePixelRatio + '  ' + (/CriOS/.test(navigator.userAgent) ? 'Chrome' : /Line\//.test(navigator.userAgent) ? 'LINE' : /Safari/.test(navigator.userAgent) ? 'Safari' : 'その他'),
+    ].join('\n');
+  };
+  let last = '';
+  const draw = () => { const now = snap(); if (now.split('\n')[0] !== last.split('\n')[0]) log.unshift(now.split('\n')[0] + ' に変わった'); last = now; box.textContent = now + '\n--\n' + log.slice(0, 4).join('\n'); };
+  draw();
+  setInterval(draw, 300);
 })();
