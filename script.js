@@ -426,8 +426,8 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   v.addEventListener('timeupdate', () => {
     if (inAd() && preIdx >= 0 && preIdx < ads.length && (preIdx > 0 || v.currentTime >= SKIP_AFTER)) screen.classList.add('can-skip');
   });
-  // CM をとばす → ロゴへ（ロゴがなければ本編へ）
-  $('.ad-skip').addEventListener('click', () => { startPre(ads.length); show(); });
+  // CM をとばす → 2026-11-19 オーナー：ロゴもとばして、本編の前の真っ暗（3秒）→ 本編へ
+  $('.ad-skip').addEventListener('click', () => { clearTimeout(preTimer); screen.classList.remove('can-skip'); blackThenFilm(); });
 
   // 再生を始めるときは全画面にする。止めるときはそのまま
   const toggle = () => {
