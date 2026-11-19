@@ -448,6 +448,17 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
 }
 .sc-hint-main { font-family: var(--serif-ja); font-size: 20px; letter-spacing: .3em; padding-left: .3em; }
 .sc-hint-sub { font-size: 11px; letter-spacing: .1em; color: rgba(236,230,220,.75); }
+/* 見終わったあと（2026-11-19）：「ご視聴ありがとうございました。」と「もう一度観る」 */
+.sc-thanks, .sc-again { display: none; }
+.screen.watched .sc-hint-main, .screen.watched .sc-hint-sub { display: none; }
+.screen.watched .sc-hint { gap: 14px; padding: 20px 30px; }
+.screen.watched .sc-thanks { display: block; font-family: var(--serif-ja); font-size: 19px; letter-spacing: .14em; color: #f1e6cf; }
+.screen.watched .sc-again {
+  display: block; padding: 8px 22px; border: 1px solid var(--accent); border-radius: 999px;
+  font-family: var(--serif-ja); font-size: 15px; letter-spacing: .2em; padding-left: calc(22px + .2em); color: #e9c886;
+  transition: background .2s ease, color .2s ease;
+}
+.sc-curtains:hover .sc-again { background: var(--accent); color: #1a140c; }
 .sc-curtains:hover .sc-hint { background: rgba(40,10,14,.75); }
 /* 2026-11-19 オーナー：開いた幕は消さずに、左右の端にたたまれて残る（ひだが詰まって見える）。見終わると左右から閉まる */
 .sc-left  { transform-origin: 0 50%; }
@@ -857,6 +868,9 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
   .screen-valance { left: -6px; right: -6px; height: 20px; }
   .sc-hint { padding: 10px 18px; }
   .sc-hint-main { font-size: 16px; }
+  .screen.watched .sc-hint { gap: 10px; padding: 14px 20px; }
+  .screen.watched .sc-thanks { font-size: 14px; letter-spacing: .1em; }
+  .screen.watched .sc-again { font-size: 13px; padding: 6px 16px; padding-left: calc(16px + .2em); }
   .sc-hint-sub { font-size: 10px; }
   /* 再生バーはなし。動画のどこをタップしても再生・停止 */
   .controls { display: none; }

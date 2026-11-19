@@ -359,7 +359,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     // 2026-11-19 オーナー：見終わったら幕が左右から閉まり、最初の状態（表紙・「上映する」）に戻る。もう一度上映すると CM から
     screen.classList.remove('curtains-gone', 'can-skip', 'film-paused');
     // 全画面から元の画面に戻ってから 0.8秒おいて、左右の幕が真ん中へ閉じていく（開くときの逆。閉じきってから「上映する」が浮かぶ）
-    setTimeout(() => { if (!post && preIdx === -1) screen.classList.remove('curtains-open'); }, 800);
+    setTimeout(() => { if (!post && preIdx === -1) screen.classList.add('watched'); screen.classList.remove('curtains-open'); }, 800);   // watched：幕に「ご視聴ありがとうございました。」と「もう一度観る」
     preIdx = pre.length ? -1 : pre.length;
     waiting = false;
     if (posterSrc) v.setAttribute('poster', posterSrc);
@@ -512,10 +512,14 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   const btn = screen && screen.querySelector('.sc-curtains');
   if (!btn) return;
   const sub = btn.querySelector('.sc-hint-sub');
+  // 2026-11-19 オーナー：見終わって幕が閉じたら「ご視聴ありがとうございました。」と「もう一度観る」（押すと幕が開く）
+  const hint = btn.querySelector('.sc-hint');
+  if (hint) hint.insertAdjacentHTML('beforeend', '<span class="sc-thanks">ご視聴ありがとうございました。</span><span class="sc-again">もう一度観る</span>');
   if (sub && matchMedia('(hover: none)').matches) sub.textContent = 'タップで幕が開きます';
   const open = () => {
     if (screen.classList.contains('curtains-open')) return;
     screen.classList.add('curtains-open');   // 開いた幕は左右の端にたたまれて残る（2026-11-19。前は 3.3秒後に消していた）
+    setTimeout(() => screen.classList.remove('watched'), 600);   // 札が消えてから「上映する」の文に戻す
   };
   btn.addEventListener('click', open);
   // 幕が閉じている間のスペースキーは、再生ではなく幕を開ける
