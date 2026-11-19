@@ -202,6 +202,9 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     requestAnimationFrame(step);
   };
   const filmSrc = v.querySelector('source').getAttribute('src');
+  // 2026-11-19 オーナー：本編の動画の頭に、黒い画面で曲だけを流す部分（約10秒）が入っている。その長さ（秒）。
+  // 再生バーの時間と位置は、この後ろ（本編の絵が始まる所）を 0:00 として数える
+  const FILM_OFF = parseFloat(v.dataset.filmStart) || 0;
   let preIdx = pre.length ? -1 : pre.length;   // -1＝まだ、0〜＝本編の前の何本目（CM・ロゴ）、pre.length＝本編
   const inAd = () => screen.classList.contains('pre-roll');   // 本編の前（CM・ロゴ）の間
   const playNow = () => { const p = v.play(); if (p && p.catch) p.catch(() => {}); };
@@ -247,11 +250,9 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
       playNow();
     }, pre[i].ad ? GAP_AD : GAP_INTRO);
   };
-  // ロゴが終わったら、真っ暗なまま 6秒 → 本編を、映像と音をゆっくり（2秒）明るく・大きくしながら始める（2026-11-18 オーナー）
-  // 2026-11-18 オーナー：ロゴのあと 真っ暗 3秒 → 注意書き（字幕だけ・無音。1秒で浮かび 4秒 → 1秒で消える）→ 真っ暗 5秒 → 本編
-  // 2026-11-19 オーナー：本編の前の真っ暗を 2秒減らして 3秒に
-  const N_BEFORE = 3000, N_IN = 1000, N_HOLD = 4000, N_OUT = 1000, N_AFTER = 3000, FADE = 2000;
-  const BLACK = N_BEFORE + N_IN + N_HOLD + N_OUT + N_AFTER;
+  // ロゴが終わったら、真っ暗なまま 3秒 → 本編の動画を再生（2026-11-19 オーナー）。
+  // 動画の頭は黒い画面で曲だけ（小さく始まる）。その間に注意書きが 1秒で浮かび 4秒 → 1秒で消え、曲だけ少し流れて本編の絵へ
+  const N_BEFORE = 3000, NOTICE_AT = 1, NOTICE_HOLD = 4;
   const cover = document.createElement('div');
   cover.className = 'fade-cover';
   screen.insertBefore(cover, screen.querySelector('.tap-layer'));
@@ -259,32 +260,35 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   notice.className = 'pre-notice';
   notice.innerHTML = '本作品は生成 AI を用いて制作されたフィクションです。<br>実在の人物・団体・出来事とは関係ありません。';
   screen.insertBefore(notice, screen.querySelector('.tap-layer'));
+  const inFilm = () => !inAd() && preIdx === pre.length && !post;
+  v.addEventListener('timeupdate', () => {
+    notice.classList.toggle('on', inFilm() && FILM_OFF > NOTICE_AT + NOTICE_HOLD && v.currentTime >= NOTICE_AT && v.currentTime < NOTICE_AT + 1 + NOTICE_HOLD);
+  });
   const blackThenFilm = () => {
     waiting = true;
     preIdx = pre.length;
     hushMusic();
-    screen.classList.add('black');
+    screen.classList.add('black', 'cut');
     screen.classList.remove('ad-mode');
     v.src = filmSrc;   // 暗い間に本編を読み込んでおく（止まったまま）
-    setTimeout(() => notice.classList.add('on'), N_BEFORE);
-    setTimeout(() => notice.classList.remove('on'), N_BEFORE + N_IN + N_HOLD);
     setTimeout(() => {
       screen.classList.remove('pre-roll');
-      v.volume = 0;
+      v.volume = 1;   // 曲の小さな始まりと本編の絵のふわっと明るくなるのは、動画の中に入れてある
       v.addEventListener('playing', () => {
-        screen.classList.remove('black');   // CSS で 2秒かけて明るくなる
-        rampVolume(FADE);
+        screen.classList.remove('black');
+        setTimeout(() => screen.classList.remove('cut'), 100);
         waiting = false;
       }, { once: true });
       playNow();
-    }, BLACK);
+    }, N_BEFORE);
   };
-  // エンドロール（2026-11-18）：本編が終わったら、左に文字が流れ、右に作品の場面、作品の曲を約15秒
-  // → 黒い画面の右下に作品名と「© 年 POCKET FILMS」がゆっくり出て 4.5秒 → ゆっくり消える → 照明がつき全画面が戻る
+  // エンドロール（2026-11-18）：本編が終わったら、左に文字が流れ、右に作品の場面
+  // 2026-11-19 オーナー：曲は本編から続けて、小さい音からだんだん大きく。文字は大きく、一定の速さで下から上へ流れて画面の外へ。
+  // 曲の決めの音（.credits の data-bang、本編が終わってからの秒）で、黒い画面の右下に作品名と「© 年 POCKET FILMS」
   const credits = screen.querySelector('.credits');
   const music = screen.querySelector('.cr-music');
-  // 2026-11-18 オーナー「もっとゆっくり、歌詞が終わる所で真ん中に着く」→ 16秒かけて真ん中へ（曲は歌詞の終わりの 16秒前から流す）、5秒止まって見せる
-  const ROLL = 21000, ROLL_MOVE = 16000;
+  const BANG = credits ? (parseFloat(credits.dataset.bang) || 25) * 1000 : 0;
+  const ROLL_START = 4000;   // 本編が終わってから真っ暗 4秒で文字が流れ始める（2026-11-18 オーナー）
   let post = false, timers = [], rollAnim = null, unlocked = false;
   const later = (ms, fn) => timers.push(setTimeout(fn, ms));
   const clearLater = () => { timers.forEach(clearTimeout); timers = []; };
@@ -313,6 +317,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   const scenes = credits ? [...credits.querySelectorAll('.cr-scenes img')] : [];
   const endShow = () => {   // 真っ暗になって終わり → 照明がつき、全画面が戻る
     clearLater();
+    screen.classList.remove('is-playing', 'film-paused');
     if (music) { music.pause(); music.currentTime = 0; music.volume = 1; }
     if (rollAnim) { rollAnim.cancel(); rollAnim = null; }
     exitFull();
@@ -323,25 +328,39 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     post = false;
     v.currentTime = 0;
   };
-  const showFinal = () => {   // 最後の黒い画面：1秒の黒 → 1.5秒で浮かぶ → 4.5秒 → 1.5秒で消える → 1秒の黒
+  const showFinal = () => {   // 決めの音で文字と場面が消え、右下に作品名が 1.5秒で浮かぶ → 4.5秒 → 1.5秒で消える → 1秒の黒
     clearLater();
     credits.classList.add('final');
-    later(1000, () => credits.classList.add('final-on'));
-    later(1000 + 1500 + 4500, () => credits.classList.remove('final-on'));
-    later(1000 + 1500 + 4500 + 1500 + 1000, endShow);
+    later(300, () => credits.classList.add('final-on'));
+    later(300 + 1500 + 4500, () => credits.classList.remove('final-on'));
+    later(300 + 1500 + 4500 + 1500 + 1000, endShow);
   };
   const startCredits = () => {
     post = true;
     screen.classList.add('post-roll');
+    notice.classList.remove('on');
     const roll = credits.querySelector('.cr-roll'), inner = credits.querySelector('.cr-inner');
-    later(4000, () => {   // 本編が終わってから真っ暗 4秒（2026-11-18 オーナー）
-      if (music) { music.currentTime = 0; music.volume = 1; music.muted = false; const p = music.play(); if (p && p.catch) p.catch(() => {}); }
-      // 文字は下からゆっくり上がって、全体が上下の真ん中に来たら止まる（2026-11-18 オーナー。前は上まで流れきっていた）
-      rollAnim = inner.animate([{ transform: `translateY(${roll.clientHeight}px)` }, { transform: `translateY(${(roll.clientHeight - inner.offsetHeight) / 2}px)` }],
-        { duration: ROLL_MOVE, easing: 'cubic-bezier(.3,.6,.4,1)', fill: 'forwards' });
-      scenes.forEach((im, i) => later(i * ROLL / scenes.length, () => { scenes.forEach(x => x.classList.remove('on')); im.classList.add('on'); }));
-      later(ROLL, showFinal);
-    });
+    let started = false;
+    const go = () => {   // 曲が鳴り始めた時を 0 にして、文字・場面・最後の作品名の時刻を合わせる
+      if (started) return;
+      started = true;
+      later(ROLL_START, () => {
+        const dur = Math.max(5000, BANG - 300 - ROLL_START);
+        rollAnim = inner.animate([{ transform: `translateY(${roll.clientHeight}px)` }, { transform: `translateY(${-inner.offsetHeight}px)` }],
+          { duration: dur, easing: 'linear', fill: 'forwards' });
+        scenes.forEach((im, i) => later(i * dur / scenes.length, () => { scenes.forEach(x => x.classList.remove('on')); im.classList.add('on'); }));
+      });
+      later(BANG, showFinal);
+    };
+    if (music) {
+      music.currentTime = 0;
+      music.volume = 1;
+      music.muted = v.muted;   // 本編で音を消していたら、エンドロールも消したまま
+      music.addEventListener('playing', go, { once: true });
+      const p = music.play();
+      if (p && p.catch) p.catch(go);
+    }
+    later(800, go);   // 曲が鳴らないときも進める
   };
   // 2026-11-18 オーナー：「エンドロールをとばす」は PC もスマホもなくした
   v.addEventListener('ended', () => {
@@ -373,16 +392,17 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
       v.pause();
     }
   };
+  const off = () => (inAd() ? 0 : FILM_OFF);   // 本編の絵が始まる所（動画の何秒目か）
   const skip = s => {
     if (inAd() || post) return;   // CM・ロゴ・エンドロールの間は 5秒戻る・進むを使わない
-    v.currentTime = Math.min(Math.max(0, v.currentTime + s), v.duration || 0);
+    v.currentTime = Math.min(Math.max(v.currentTime >= off() ? off() : 0, v.currentTime + s), v.duration || 0);
     show();
   };
   const update = () => {
-    const p = v.duration ? v.currentTime / v.duration : 0;
-    if (!seeking) seek.value = Math.round(p * 1000);
+    const o = off(), d = Math.max(0, (v.duration || 0) - o), t = Math.min(d, Math.max(0, v.currentTime - o));
+    if (!seeking) seek.value = Math.round((d ? t / d : 0) * 1000);
     seek.style.setProperty('--p', (seek.value / 10) + '%');
-    cur.textContent = fmt(v.currentTime) + ' / ' + fmt(v.duration);
+    cur.textContent = fmt(t) + ' / ' + fmt(d);
   };
 
   $('.tap-layer').addEventListener('click', () => { toggle(); show(); });
@@ -395,7 +415,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   seek.addEventListener('input', () => {
     if (inAd()) return;
     seeking = true;
-    if (v.duration) v.currentTime = seek.value / 1000 * v.duration;
+    if (v.duration) v.currentTime = off() + seek.value / 1000 * (v.duration - off());
     update();
     show();
   });
@@ -403,12 +423,17 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
 
   v.addEventListener('play', () => {
     screen.classList.add('is-playing');
+    screen.classList.remove('film-paused');
     $('.c-play').setAttribute('aria-label', '一時停止');
     show();
   });
   v.addEventListener('pause', () => {
-    if (v.ended && inAd()) return;   // CM から次へ切り替わるときは、再生バーを出さない
+    // CM から次へ切り替わるときと、本編が終わってエンドロールへ進むときは、再生ボタンも再生バーも出さない
+    // （2026-11-19 オーナー：iPhone で本編の終わりに一瞬再生ボタンが出ていた）
+    if (v.ended && (inAd() || credits)) return;
     screen.classList.remove('is-playing');
+    // 2026-11-19 オーナー：本編を止めたら、スマホでも再生バー（位置・時間・音）を出す。タップで再生すると消える
+    screen.classList.toggle('film-paused', inFilm() && !waiting);
     $('.c-play').setAttribute('aria-label', '再生');
     show();
   });

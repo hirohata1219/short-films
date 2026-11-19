@@ -623,9 +623,10 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
   transition: opacity .5s ease;   /* 本編の終わりから 0.5秒で真っ暗に */
 }
 .screen.post-roll .credits { opacity: 1; pointer-events: auto; }
-/* 左：下からゆっくり上がり、まとまり全体が上下の真ん中で止まる（上下の端はなめらかに消える）。21:9 の作品でも高さの 3/4 に収まる大きさ */
+/* 左：下から一定の速さで上がり、画面の上へ消えていく（上下の端はなめらかに消える）。
+   2026-11-19 オーナー「文字が小さすぎる。可能な限り大きく」→ 役目を上、名前を下にして真ん中にそろえ、前の約2倍の大きさに */
 .cr-roll {
-  position: relative; flex: 0 0 54%; overflow: hidden;
+  position: relative; flex: 0 0 58%; overflow: hidden;
   -webkit-mask-image: linear-gradient(transparent, #000 7%, #000 93%, transparent);
   mask-image: linear-gradient(transparent, #000 7%, #000 93%, transparent);
   transition: opacity .8s ease;
@@ -634,20 +635,17 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
   position: absolute; left: 0; right: 0; top: 0;
   transform: translateY(100cqw);   /* 流れ始めるまでは画面の外 */
   text-align: center; color: #e8e2d6; font-family: var(--serif-ja);
-  padding: 0 3cqw;
+  padding: 0 2.5cqw;
 }
-.cr-title { margin: 0 0 2.2cqw; font-size: 2cqw; letter-spacing: .12em; color: #f1dfb4; }
-.cr-list {
-  display: grid; grid-template-columns: 1fr 1.25fr; gap: .55cqw 2cqw;
-  margin: 0; font-size: 1.25cqw; line-height: 1.5; text-align: left;
-}
-.cr-list dt { text-align: right; color: var(--accent); font-size: 1cqw; letter-spacing: .1em; padding-top: .2cqw; }
-.cr-list dd { margin: 0; }
-.cr-note { margin: 2.4cqw 0 0; font-size: 1.05cqw; line-height: 1.8; color: rgba(232,226,214,.75); }
+.cr-title { margin: 0 0 5.5cqw; font-size: 3.6cqw; line-height: 1.45; letter-spacing: .1em; color: #f1dfb4; text-wrap: balance; }
+.cr-list { margin: 0; }
+.cr-list dt { color: var(--accent); font-size: 1.9cqw; letter-spacing: .14em; margin: 0 0 .7cqw; }
+.cr-list dd { margin: 0 0 3.4cqw; font-size: 2.8cqw; line-height: 1.45; }
+.cr-note { margin: 4.5cqw 0 0; font-size: 2.1cqw; line-height: 1.8; color: rgba(232,226,214,.8); }
 /* 右：作品の場面が順に入れかわる */
 .cr-scenes { position: relative; flex: 1; transition: opacity .8s ease; }
 .cr-scenes img {
-  position: absolute; left: 6%; top: 50%; width: 84%; aspect-ratio: 16 / 9; object-fit: cover;
+  position: absolute; left: 4%; top: 50%; width: 88%; aspect-ratio: 16 / 9; object-fit: cover;
   transform: translateY(-50%) scale(1.04); opacity: 0;
   transition: opacity 1s ease, transform 4s linear;
   box-shadow: 0 0 0 1px rgba(201,169,106,.25);
@@ -656,12 +654,13 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
 /* 最後の黒い画面：右下に作品名と「© 年 POCKET FILMS」 */
 .credits.final .cr-roll, .credits.final .cr-scenes { opacity: 0; pointer-events: none; }
 .cr-final {
-  position: absolute; right: 5cqw; bottom: 4.5cqw; text-align: right;
+  position: absolute; right: 5cqw; bottom: 5cqw; text-align: right;
   opacity: 0; transition: opacity 1.5s ease; pointer-events: none;
 }
 .credits.final-on .cr-final { opacity: 1; }
-.cr-final-title { margin: 0 0 .6cqw; font-family: var(--serif-ja); font-size: 1.7cqw; letter-spacing: .1em; color: #ece6dc; }
-.cr-final-c { margin: 0; font-family: var(--serif-en); font-size: 1.4cqw; letter-spacing: .2em; color: var(--accent); }
+/* 2026-11-19 オーナー：右下の文字も大きく（前の約2倍） */
+.cr-final-title { margin: 0 0 1cqw; font-family: var(--serif-ja); font-size: 3.4cqw; letter-spacing: .1em; color: #ece6dc; }
+.cr-final-c { margin: 0; font-family: var(--serif-en); font-size: 2.5cqw; letter-spacing: .2em; color: var(--accent); }
 
 /* スマホの再生ボタン（動画の真ん中。半透明で縁だけ金色）。PC では出さない */
 .big-play { display: none; }
@@ -886,4 +885,41 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
   margin: 18px 0 0; text-align: center;
   color: #ffd23f; font-weight: 700; font-size: 15px; line-height: 1.6;
   text-shadow: 0 1px 3px rgba(0,0,0,.8);
+}
+
+/* エンドロールの間は再生ボタンを出さない（2026-11-19：iPhone で本編の終わりに一瞬見えていた） */
+.screen.post-roll .big-play { opacity: 0 !important; pointer-events: none !important; }
+
+/* 2026-11-19 オーナー：スマホ・タブレット（指で操作する端末）は、本編を止めたときだけ再生バーを出す。
+   上の段にシーク（指で動かして場面を移動）と音のボタン、下に今の時間。タップで再生すると消える */
+@media (hover: none) {
+  .screen .controls {
+    display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 10px;
+    padding: 30px 16px 10px;
+    opacity: 0; pointer-events: none;
+  }
+  .screen.film-paused .controls { opacity: 1; pointer-events: auto; }
+  .screen .controls .c-row { display: contents; }
+  .screen .controls .c-center, .screen .controls .c-full { display: none; }
+  .screen .controls .c-seek { grid-column: 1; grid-row: 1; height: 30px; }
+  .screen .controls .c-right { grid-column: 2; grid-row: 1; }
+  .screen .controls .c-time { grid-column: 1; grid-row: 2; font-size: 13px; }
+  .screen .controls .c-icon { width: 44px; height: 44px; }
+  .screen .controls .c-icon svg { width: 24px; height: 24px; }
+  .c-seek::-webkit-slider-runnable-track { height: 4px; }
+  .c-seek::-webkit-slider-thumb { width: 18px; height: 18px; margin-top: -7px; }
+  .tap-layer { bottom: 0; }
+  /* 止めたときの真ん中の再生ボタン（横にしてスマホの画面が広いときも出す） */
+  .big-play {
+    display: grid; place-items: center;
+    position: absolute; left: 50%; top: 50%;
+    width: 64px; height: 64px; margin: -32px 0 0 -32px;
+    border: 2px solid var(--accent); border-radius: 50%;
+    background: rgba(0,0,0,.25); color: var(--accent);
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+    z-index: 4; cursor: pointer; -webkit-tap-highlight-color: transparent;
+    transition: opacity .3s ease, transform .15s ease;
+  }
+  .big-play svg { width: 30px; height: 30px; fill: currentColor; margin-left: 4px; }
+  .screen.is-playing .big-play { opacity: 0; pointer-events: none; }
 }
