@@ -206,6 +206,11 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   // 2026-11-19 オーナー：本編の動画の頭に、黒い画面で曲だけを流す部分（約10秒）が入っている。その長さ（秒）。
   // 再生バーの時間と位置は、この後ろ（本編の絵が始まる所）を 0:00 として数える
   const FILM_OFF = parseFloat(v.dataset.filmStart) || 0;
+  // 2026-11-19 オーナー：本編とエンドロールの曲がつながる作品は、本編の動画の後ろにエンドロールの曲（＋黒い画面）を入れて 1本にした
+  // （別のファイルで曲を鳴らすと iPhone などでつなぎ目が途切れるため）。data-film-end＝本編の絵が終わる秒。ここでエンドロールを始める
+  const FILM_END = parseFloat(v.dataset.filmEnd) || 0;
+  const filmLen = () => FILM_END || v.duration || 0;          // 本編の終わり（動画の何秒目か）
+  const filmLeft = () => filmLen() - v.currentTime;           // 本編の残り
   let preIdx = pre.length ? -1 : pre.length;   // -1＝まだ、0〜＝本編の前の何本目（CM・ロゴ）、pre.length＝本編
   const inAd = () => screen.classList.contains('pre-roll');   // 本編の前（CM・ロゴ）の間
   const playNow = () => { const p = v.play(); if (p && p.catch) p.catch(() => {}); };
@@ -269,7 +274,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   let endRaf = null;
   const applyEnd = () => {
     if (post || !inFilm()) return false;
-    const k = Math.max(0, Math.min(1, (END_FADE - (v.duration - v.currentTime)) / END_FADE));
+    const k = Math.max(0, Math.min(1, (END_FADE - filmLeft()) / END_FADE));
     cover.style.transition = 'none'; cover.style.opacity = k;
     if (endMark && k > 0) { endMark.style.transition = 'none'; endMark.style.opacity = 1 - k; }
     return true;
@@ -284,11 +289,15 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     if (endMark) endMark.style.transition = endMark.style.opacity = '';
   };
   v.addEventListener('timeupdate', () => {
-    if (endMark && !post) endMark.classList.toggle('on', inFilm() && v.duration - v.currentTime <= (parseFloat(endMark.dataset.lead) || END_LEAD));
+    if (endMark && !post) endMark.classList.toggle('on', inFilm() && filmLeft() <= (parseFloat(endMark.dataset.lead) || END_LEAD));
     // 2026-11-19 オーナー：本編の最後は、題名の映像と右下のマークを同時に消していく（最後の 0.7秒で一緒に暗く）
     if (!post && inFilm()) {
-      if (v.duration - v.currentTime <= END_FADE + 0.4) { applyEnd(); if (!endRaf) endRaf = requestAnimationFrame(endTick); }
+      if (filmLeft() <= END_FADE + 0.4) { applyEnd(); if (!endRaf) endRaf = requestAnimationFrame(endTick); }
       else clearEndFade();
+      // 1本にした作品：本編の絵が終わる時刻ちょうどにエンドロールへ（timeupdate は 0.25秒ほどおきなので、手前で時刻を合わせて待つ）
+      if (FILM_END && credits && !joinTimer && filmLeft() <= 0.6) {
+        joinTimer = setTimeout(() => { joinTimer = null; if (!post && inFilm() && !v.paused && filmLeft() <= 0.1) toCredits(); }, Math.max(0, filmLeft() * 1000));
+      }
     }
     notice.classList.toggle('on', inFilm() && FILM_OFF > NOTICE_AT + NOTICE_HOLD && v.currentTime >= NOTICE_AT && v.currentTime < NOTICE_AT + 1 + NOTICE_HOLD);
   });
@@ -317,8 +326,9 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   const music = screen.querySelector('.cr-music');
   const BANG = credits ? (parseFloat(credits.dataset.bang) || 25) * 1000 : 0;
   const ROLL_START = 4000;   // 本編が終わってから真っ暗 4秒で文字が流れ始める（2026-11-18 オーナー）
-  let post = false, timers = [], rollAnim = null, unlocked = false;
+  let post = false, timers = [], rollAnim = null, unlocked = false, joinTimer = null, crT0 = 0;
   const later = (ms, fn) => timers.push(setTimeout(fn, ms));
+  const laterC = (ms, fn) => later(Math.max(0, crT0 + ms - performance.now()), fn);   // 本編が終わってから ms の時に
   const clearLater = () => { timers.forEach(clearTimeout); timers = []; };
   // iPhone などは、あとで曲を鳴らすには最初に押したときに一度鳴らしておく必要がある（音なしで鳴らしてすぐ止める）
   const unlockMusic = () => {
@@ -345,6 +355,8 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   const scenes = credits ? [...credits.querySelectorAll('.cr-scenes img')] : [];
   const endShow = () => {   // 真っ暗になって終わり → 照明がつき、全画面が戻る
     clearLater();
+    clearTimeout(joinTimer); joinTimer = null;
+    v.pause();
     screen.classList.remove('is-playing', 'film-paused');
     if (endMark) endMark.classList.remove('on');
     clearEndFade();
@@ -380,10 +392,11 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     notice.classList.remove('on');
     const roll = credits.querySelector('.cr-roll'), inner = credits.querySelector('.cr-inner');
     let started = false;
-    const go = () => {   // 曲が鳴り始めた時を 0 にして、文字・場面・最後の作品名の時刻を合わせる
+    const go = () => {   // 曲が鳴り始めた時（1本にした作品は本編の絵が終わった時）を 0 にして、文字・場面・最後の作品名の時刻を合わせる
       if (started) return;
       started = true;
-      later(ROLL_START, () => {
+      crT0 = FILM_END ? performance.now() - Math.max(0, v.currentTime - FILM_END) * 1000 : performance.now();
+      laterC(ROLL_START, () => {
         // 2026-11-19 オーナー：スタッフの文字（制作〜Claude Code）が一定の速さで上へ流れて消えきり、その 1秒後に、題名を左側の真ん中に
         // その場で出す（作品ごとに slow＝ゆっくり／bang＝バンと）。出す瞬間（data-at、本編が終わってから）は曲の強い拍。文字はその 1秒前に消えきる速さ
         const title = credits.querySelector('.cr-title'), list = inner.querySelector('.cr-list'), lastDd = list.lastElementChild;
@@ -400,11 +413,12 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
         const rebuild = () => { if (post && rollAnim) build(rollAnim.currentTime); };
         addEventListener('resize', rebuild);
         title.style.setProperty('--fade', (parseFloat(title.dataset.fade) || 2.5) + 's');
-        later(at - ROLL_START, () => title.classList.add('show', 'show-' + (title.dataset.mode || 'slow')));
-        scenes.forEach((im, i) => later(i * (BANG - ROLL_START) / scenes.length, () => { scenes.forEach(x => x.classList.remove('on')); im.classList.add('on'); }));
+        laterC(at, () => title.classList.add('show', 'show-' + (title.dataset.mode || 'slow')));
+        scenes.forEach((im, i) => laterC(ROLL_START + i * (BANG - ROLL_START) / scenes.length, () => { scenes.forEach(x => x.classList.remove('on')); im.classList.add('on'); }));
       });
-      later(BANG, showFinal);
+      laterC(BANG, showFinal);
     };
+    if (FILM_END) { go(); return; }   // 1本にした作品：曲は動画の中で続いている
     if (music) {
       music.currentTime = 0;
       music.volume = 1;
@@ -416,9 +430,12 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     later(800, go);   // 曲が鳴らないときも進める
   };
   // 2026-11-18 オーナー：「エンドロールをとばす」は PC もスマホもなくした
+  const toCredits = () => {
+    cover.style.transition = 'none'; cover.style.opacity = 1; if (endMark) endMark.style.opacity = 0;
+    startCredits();
+  };
   v.addEventListener('ended', () => {
-    if (!inAd() && credits) { cover.style.transition = 'none'; cover.style.opacity = 1; if (endMark) endMark.style.opacity = 0; }
-    if (!inAd()) { if (credits && !post) startCredits(); return; }
+    if (!inAd()) { if (credits && !post) toCredits(); return; }
     preIdx + 1 >= pre.length ? blackThenFilm() : startPre(preIdx + 1);
   });
   // 「CM をとばす」は CM が始まって 5秒たってから出す（2026-11-18 オーナー。PC もスマホも）。一度出たら次の CM でも出したまま
@@ -449,11 +466,11 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   const off = () => (inAd() ? 0 : FILM_OFF);   // 本編の絵が始まる所（動画の何秒目か）
   const skip = s => {
     if (inAd() || post) return;   // CM・ロゴ・エンドロールの間は 5秒戻る・進むを使わない
-    v.currentTime = Math.min(Math.max(v.currentTime >= off() ? off() : 0, v.currentTime + s), v.duration || 0);
+    v.currentTime = Math.min(Math.max(v.currentTime >= off() ? off() : 0, v.currentTime + s), inAd() ? v.duration || 0 : filmLen());
     show();
   };
   const update = () => {
-    const o = off(), d = Math.max(0, (v.duration || 0) - o), t = Math.min(d, Math.max(0, v.currentTime - o));
+    const o = off(), d = Math.max(0, (inAd() ? v.duration || 0 : filmLen()) - o), t = Math.min(d, Math.max(0, v.currentTime - o));
     if (!seeking) seek.value = Math.round((d ? t / d : 0) * 1000);
     seek.style.setProperty('--p', (seek.value / 10) + '%');
     cur.textContent = fmt(t) + ' / ' + fmt(d);
@@ -469,7 +486,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   seek.addEventListener('input', () => {
     if (inAd()) return;
     seeking = true;
-    if (v.duration) v.currentTime = off() + seek.value / 1000 * (v.duration - off());
+    if (v.duration) v.currentTime = off() + seek.value / 1000 * (filmLen() - off());
     update();
     show();
   });
@@ -484,7 +501,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   v.addEventListener('pause', () => {
     // CM から次へ切り替わるときと、本編が終わってエンドロールへ進むときは、再生ボタンも再生バーも出さない
     // （2026-11-19 オーナー：iPhone で本編の終わりに一瞬再生ボタンが出ていた）
-    if (v.ended && (inAd() || credits)) return;
+    if ((v.ended || post) && (inAd() || credits)) return;
     // 2026-11-19 オーナー「本編の冒頭に再生ボタンなどが一瞬出る」→ 次の動画へ入れ替える間（真っ暗の間）の pause では何も出さない
     if (waiting) return;
     screen.classList.remove('is-playing');
