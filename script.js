@@ -238,14 +238,13 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     preTimer = setTimeout(() => {
       waiting = false;
       if (fade) {
-        // ふわっと始める：映像は暗い幕を fade ミリ秒で外し、音も 0 から上げる
-        v.volume = 0;
+        // ふわっと始める：映像は暗い幕を fade ミリ秒で外す（音は 2026-11-19 から上げない）
+        v.volume = 1;   // 2026-11-19 オーナー（時計の CM）：音は頭から普通の音量で。絵だけふわっと明るくする
         v.addEventListener('playing', () => {
           cover.style.transitionDuration = fade + 'ms';
           screen.classList.remove('cut');
           void cover.offsetWidth;   // cut を外したのを先に反映させてから幕を外す（ゆっくり消えるように）
           screen.classList.remove('black');
-          rampVolume(fade);
           setTimeout(() => { cover.style.transitionDuration = ''; }, fade + 100);
         }, { once: true });
       } else {
