@@ -261,7 +261,11 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   notice.innerHTML = '本作品は生成 AI を用いて制作されたフィクションです。<br>実在の人物・団体・出来事とは関係ありません。';
   screen.insertBefore(notice, screen.querySelector('.tap-layer'));
   const inFilm = () => !inAd() && preIdx === pre.length && !post;
+  // 本編の終わりのマーク（2026-11-19 オーナー）：本編の最後の 2.6秒、右下にふわっと（作品ごとのデザインは style.css）
+  const endMark = screen.querySelector('.end-mark');
+  const END_LEAD = 2.6;
   v.addEventListener('timeupdate', () => {
+    if (endMark && !post) endMark.classList.toggle('on', inFilm() && v.duration - v.currentTime <= END_LEAD);
     notice.classList.toggle('on', inFilm() && FILM_OFF > NOTICE_AT + NOTICE_HOLD && v.currentTime >= NOTICE_AT && v.currentTime < NOTICE_AT + 1 + NOTICE_HOLD);
   });
   const blackThenFilm = () => {
@@ -318,6 +322,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   const endShow = () => {   // 真っ暗になって終わり → 照明がつき、全画面が戻る
     clearLater();
     screen.classList.remove('is-playing', 'film-paused');
+    if (endMark) endMark.classList.remove('on');
     if (music) { music.pause(); music.currentTime = 0; music.volume = 1; }
     if (rollAnim) { rollAnim.cancel(); rollAnim = null; }
     exitFull();

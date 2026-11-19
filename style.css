@@ -923,3 +923,45 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
   .big-play svg { width: 30px; height: 30px; fill: currentColor; margin-left: 4px; }
   .screen.is-playing .big-play { opacity: 0; pointer-events: none; }
 }
+
+/* ---------- 本編の終わりのマーク（2026-11-19） ---------- */
+/* 本編の最後の数秒、右下にふわっと出る。作品ごとにデザインを変える（script.js が .on を付ける。エンドロールの黒が上にかぶさって消える） */
+.end-mark {
+  position: absolute; right: 4.5cqw; bottom: 4.5cqw; z-index: 2; pointer-events: none;
+  opacity: 0; transform: translateY(.6cqw);
+  transition: opacity 1.4s ease, transform 1.8s ease;
+}
+.end-mark.on { opacity: 1; transform: none; }
+/* LAST HOPE：金属の「THE END」が、出てすぐ雷のように2回光る */
+.em-sf .em-text {
+  display: block; font-family: "Orbitron", var(--sans); font-weight: 700; font-size: 2.3cqw; letter-spacing: .32em; margin-right: -.32em;
+  background: linear-gradient(180deg, #f4f8ff 0%, #b9c7d8 45%, #7d8fa6 55%, #e6eefa 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 .5cqw rgba(120,170,255,.55));
+}
+.em-sf.on .em-text { animation: em-flash 2.2s ease-out .6s both; }
+@keyframes em-flash {
+  0%, 100% { filter: drop-shadow(0 0 .5cqw rgba(120,170,255,.55)) brightness(1); }
+  6% { filter: drop-shadow(0 0 1.6cqw rgba(170,210,255,.95)) brightness(2.3); }
+  12% { filter: drop-shadow(0 0 .5cqw rgba(120,170,255,.55)) brightness(1); }
+  18% { filter: drop-shadow(0 0 1.2cqw rgba(170,210,255,.85)) brightness(1.8); }
+  30% { filter: drop-shadow(0 0 .5cqw rgba(120,170,255,.55)) brightness(1); }
+}
+/* 母のレシピ：日本のドラマのような筆文字の「終」と、制作・著作 */
+.em-drama { display: flex; flex-direction: column; align-items: center; color: #f1ece2; }
+.em-drama .em-kanji { font-family: "Yuji Syuku", var(--serif-ja); font-size: 5.4cqw; line-height: 1.1; }
+.em-drama .em-sub {
+  margin-top: .5cqw; padding: .25cqw .4cqw; font-family: var(--serif-ja); font-size: 1.25cqw; letter-spacing: .3em; margin-right: -.3em;
+  border-top: 1px solid rgba(241,236,226,.6); border-bottom: 1px solid rgba(241,236,226,.6);
+}
+.em-drama .em-co { margin-top: .6cqw; font-family: var(--serif-en); font-weight: 600; font-size: 1.5cqw; letter-spacing: .18em; margin-right: -.18em; }
+/* 小さなやさしさ：絵本のような「おしまい」と赤い傘（題名と同じ、茶色の丸い太字に白いふち） */
+.em-book { display: flex; align-items: flex-end; gap: .7cqw; }
+.em-book .em-text {
+  font-family: "Zen Maru Gothic", var(--sans); font-weight: 700; font-size: 3.6cqw; letter-spacing: .08em; color: #5b3a29;
+  text-shadow: 0 0 .3cqw #fff, 0 0 .3cqw #fff, 0 0 .8cqw rgba(255,255,255,.9);
+}
+.em-book .em-umb { width: 4.6cqw; height: 4.6cqw; transform: rotate(-14deg); filter: drop-shadow(0 .15cqw .3cqw rgba(90,60,40,.45)); }
+.em-book.on .em-umb { animation: em-sway 3s ease-in-out .4s both; }
+@keyframes em-sway { 0% { transform: rotate(-14deg); } 35% { transform: rotate(-4deg); } 70% { transform: rotate(-17deg); } 100% { transform: rotate(-12deg); } }
+
