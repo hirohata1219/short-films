@@ -284,7 +284,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     if (endMark) endMark.style.transition = endMark.style.opacity = '';
   };
   v.addEventListener('timeupdate', () => {
-    if (endMark && !post) endMark.classList.toggle('on', inFilm() && v.duration - v.currentTime <= END_LEAD);
+    if (endMark && !post) endMark.classList.toggle('on', inFilm() && v.duration - v.currentTime <= (parseFloat(endMark.dataset.lead) || END_LEAD));
     // 2026-11-19 オーナー：本編の最後は、題名の映像と右下のマークを同時に消していく（最後の 0.7秒で一緒に暗く）
     if (!post && inFilm()) {
       if (v.duration - v.currentTime <= END_FADE + 0.4) { applyEnd(); if (!endRaf) endRaf = requestAnimationFrame(endTick); }
@@ -383,17 +383,30 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
       if (started) return;
       started = true;
       later(ROLL_START, () => {
-        // 2026-11-19 オーナー：速さは今のまま（前の「題名が先頭で、全部が上へ流れきる」のと同じ速さ）。題名は最後に遅れて下から流れてきて、
-        // 左側の上下の真ん中で止まり、そのまま決めの音で次の画面（右下の作品名と ©）へ
-        const R = roll.clientHeight, title = inner.querySelector('.cr-title');
-        const all = Math.max(5000, BANG - 300 - ROLL_START);
-        title.style.marginTop = '0px';
-        const speed = (R + inner.offsetHeight + screen.clientWidth * 0.055) / all;   // 1ミリ秒に進む px（前と同じ速さ。前は題名の下に 5.5cqw の間があった）
-        title.style.marginTop = Math.max(0, R / 2 - title.offsetHeight / 2 + R * 0.05) + 'px';   // スタッフの文字が上へ消えきってから題名が真ん中に来る間
-        const endY = R / 2 - (title.offsetTop + title.offsetHeight / 2);
-        const dur = Math.min((R - endY) / speed, all - 1000);                  // 少なくとも 1秒は止まって見せる
-        rollAnim = inner.animate([{ transform: `translateY(${R}px)` }, { transform: `translateY(${endY}px)` }],
-          { duration: dur, easing: 'linear', fill: 'forwards' });
+        // 2026-11-19 オーナー：スタッフの文字（制作〜Claude Code）が上へ消えきった 1秒後に、題名が下から出てきて左側の上下の真ん中で止まり、
+        // 2.5秒見せて決めの音で次の画面へ。速さは一定で、この流れが決めの音にぴったり収まる速さ（曲の流し始めは films.json で合わせてある）
+        const title = inner.querySelector('.cr-title'), list = inner.querySelector('.cr-list'), lastDd = list.lastElementChild;
+        const HOLD = 2500, GAP = 1000;
+        const all = Math.max(8000, BANG - 300 - ROLL_START);
+        const span = Math.max(3000, all + 300 - HOLD - GAP);   // 流れ始めてから題名が真ん中で止まるまで（1秒の間を除く）
+        // 文字の大きさは画面の幅で変わるので、全画面の出入りや回転で大きさが変わったら、進んだ割合はそのままで位置を計算し直す
+        const build = at => {
+          const R = roll.clientHeight;
+          const listEnd = lastDd.offsetTop + lastDd.offsetHeight;             // スタッフの文字の下の端（cr-inner の上から）
+          title.style.marginTop = '0px';
+          const speed = (1.5 * R + listEnd + title.offsetHeight / 2) / span;  // 1ミリ秒に進む px
+          // 文字が消えきって 1秒後に題名が画面の下に来る位置。最後の行の下の余白と題名の上の余白は重なる（大きいほうだけ）ので、文字の下の端から測る
+          title.style.marginTop = (R + speed * GAP) + 'px';
+          const endY = R / 2 - (title.offsetTop + title.offsetHeight / 2);
+          if (rollAnim) rollAnim.cancel();
+          rollAnim = inner.animate([{ transform: `translateY(${R}px)` }, { transform: `translateY(${endY}px)` }],
+            { duration: (R - endY) / speed, easing: 'linear', fill: 'forwards' });
+          if (at) rollAnim.currentTime = at;
+        };
+        build(0);
+        const rebuild = () => { if (post && rollAnim) build(rollAnim.currentTime); };
+        addEventListener('resize', rebuild);
+        later(all + 300, () => removeEventListener('resize', rebuild));
         scenes.forEach((im, i) => later(i * all / scenes.length, () => { scenes.forEach(x => x.classList.remove('on')); im.classList.add('on'); }));
       });
       later(BANG, showFinal);

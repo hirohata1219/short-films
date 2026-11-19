@@ -983,6 +983,8 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
   transition: opacity 1.4s ease, transform 1.8s ease;
 }
 .end-mark.on { opacity: 1; transform: none; }
+/* 母のレシピ（2026-11-19）：題名と同時に、同じ 0.7秒で浮かぶ */
+.end-mark[data-fade="0.7"] { transition: opacity .7s linear, transform .7s linear; }
 /* LAST HOPE：金属の「THE END」が、出てすぐ雷のように2回光る */
 .em-sf .em-text {
   display: block; font-family: "Orbitron", var(--sans); font-weight: 700; font-size: 2.3cqw; letter-spacing: .32em; margin-right: -.32em;
