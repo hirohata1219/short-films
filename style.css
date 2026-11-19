@@ -465,6 +465,9 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
 .sc-right { transform-origin: 100% 50%; }
 .screen.curtains-open .sc-left,
 .screen.curtains-open .sc-right { transform: scaleX(.12); }
+/* 上映中（照明が落ちている間）は、たたんだ幕を薄く消す（全画面にしていないときに、映像やエンドロールの文字にかからないように） */
+.sc-curtains { transition: opacity .8s ease; }
+body.lights-off .screen.curtains-open .sc-curtains { opacity: 0; }
 /* 全画面で見ている間は、たたんだ幕も映像にかからないように出さない */
 .screen:fullscreen .sc-curtains,
 .screen.pseudo-full .sc-curtains { display: none; }
@@ -671,6 +674,18 @@ body.lights-off .screen { box-shadow: 0 0 120px rgba(255,255,255,.06), 0 0 0 1px
   transform: translateY(100cqw);   /* 流れ始めるまでは画面の外 */
   text-align: center; color: #e8e2d6; font-family: var(--serif-ja);
   padding: 0 2.5cqw;
+}
+/* 題名（2026-11-19）：流さずに、左側の真ん中にその場で出す。slow＝--fade 秒でゆっくり、bang＝一瞬で大きく光って出る */
+.cr-roll > .cr-title {
+  position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%);
+  padding: 0 2.5cqw; text-align: center; font-family: var(--serif-ja); opacity: 0;
+}
+.cr-title.show-slow { opacity: 1; transition: opacity var(--fade, 2.5s) ease; }
+.cr-title.show-bang { opacity: 1; animation: cr-bang .9s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes cr-bang {
+  0%   { opacity: 0; transform: translateY(-50%) scale(1.35); filter: blur(6px) brightness(2.2); text-shadow: 0 0 2cqw rgba(255,240,200,.9); }
+  12%  { opacity: 1; transform: translateY(-50%) scale(1.04); filter: blur(0) brightness(2); text-shadow: 0 0 2.4cqw rgba(255,240,200,.95); }
+  100% { opacity: 1; transform: translateY(-50%) scale(1); filter: none; text-shadow: 0 0 0 rgba(255,240,200,0); }
 }
 .cr-title { margin: 0; font-size: 3.6cqw; line-height: 1.45; letter-spacing: .1em; color: #f1dfb4; text-wrap: balance; }
 .cr-list { margin: 0; }

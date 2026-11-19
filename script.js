@@ -354,6 +354,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     document.body.classList.remove('lights-off');
     screen.classList.remove('post-roll');
     credits.classList.remove('final', 'final-on');
+    const ct = credits.querySelector('.cr-title'); if (ct) ct.classList.remove('show', 'show-slow', 'show-bang');
     scenes.forEach(x => x.classList.remove('on'));
     post = false;
     // 2026-11-19 オーナー：見終わったら幕が左右から閉まり、最初の状態（表紙・「上映する」）に戻る。もう一度上映すると CM から
@@ -383,31 +384,24 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
       if (started) return;
       started = true;
       later(ROLL_START, () => {
-        // 2026-11-19 オーナー：スタッフの文字（制作〜Claude Code）が上へ消えきった 1秒後に、題名が下から出てきて左側の上下の真ん中で止まり、
-        // 2.5秒見せて決めの音で次の画面へ。速さは一定で、この流れが決めの音にぴったり収まる速さ（曲の流し始めは films.json で合わせてある）
-        const title = inner.querySelector('.cr-title'), list = inner.querySelector('.cr-list'), lastDd = list.lastElementChild;
-        const HOLD = 2500, GAP = 1000;
-        const all = Math.max(8000, BANG - 300 - ROLL_START);
-        const span = Math.max(3000, all + 300 - HOLD - GAP);   // 流れ始めてから題名が真ん中で止まるまで（1秒の間を除く）
-        // 文字の大きさは画面の幅で変わるので、全画面の出入りや回転で大きさが変わったら、進んだ割合はそのままで位置を計算し直す
-        const build = at => {
-          const R = roll.clientHeight;
-          const listEnd = lastDd.offsetTop + lastDd.offsetHeight;             // スタッフの文字の下の端（cr-inner の上から）
-          title.style.marginTop = '0px';
-          const speed = (1.5 * R + listEnd + title.offsetHeight / 2) / span;  // 1ミリ秒に進む px
-          // 文字が消えきって 1秒後に題名が画面の下に来る位置。最後の行の下の余白と題名の上の余白は重なる（大きいほうだけ）ので、文字の下の端から測る
-          title.style.marginTop = (R + speed * GAP) + 'px';
-          const endY = R / 2 - (title.offsetTop + title.offsetHeight / 2);
+        // 2026-11-19 オーナー：スタッフの文字（制作〜Claude Code）が一定の速さで上へ流れて消えきり、その 1秒後に、題名を左側の真ん中に
+        // その場で出す（作品ごとに slow＝ゆっくり／bang＝バンと）。出す瞬間（data-at、本編が終わってから）は曲の強い拍。文字はその 1秒前に消えきる速さ
+        const title = credits.querySelector('.cr-title'), list = inner.querySelector('.cr-list'), lastDd = list.lastElementChild;
+        const at = (parseFloat(title.dataset.at) || (BANG / 1000 - 3)) * 1000;
+        const span = Math.max(4000, at - 1000 - ROLL_START);                  // 流れ始めてから消えきるまで
+        const build = cur => {                                                 // 画面の大きさが変わったら、進んだ割合はそのままで位置を計算し直す
+          const R = roll.clientHeight, listEnd = lastDd.offsetTop + lastDd.offsetHeight;
           if (rollAnim) rollAnim.cancel();
-          rollAnim = inner.animate([{ transform: `translateY(${R}px)` }, { transform: `translateY(${endY}px)` }],
-            { duration: (R - endY) / speed, easing: 'linear', fill: 'forwards' });
-          if (at) rollAnim.currentTime = at;
+          rollAnim = inner.animate([{ transform: `translateY(${R}px)` }, { transform: `translateY(${-listEnd}px)` }],
+            { duration: span, easing: 'linear', fill: 'forwards' });
+          if (cur) rollAnim.currentTime = cur;
         };
         build(0);
         const rebuild = () => { if (post && rollAnim) build(rollAnim.currentTime); };
         addEventListener('resize', rebuild);
-        later(all + 300, () => removeEventListener('resize', rebuild));
-        scenes.forEach((im, i) => later(i * all / scenes.length, () => { scenes.forEach(x => x.classList.remove('on')); im.classList.add('on'); }));
+        title.style.setProperty('--fade', (parseFloat(title.dataset.fade) || 2.5) + 's');
+        later(at - ROLL_START, () => title.classList.add('show', 'show-' + (title.dataset.mode || 'slow')));
+        scenes.forEach((im, i) => later(i * (BANG - ROLL_START) / scenes.length, () => { scenes.forEach(x => x.classList.remove('on')); im.classList.add('on'); }));
       });
       later(BANG, showFinal);
     };
