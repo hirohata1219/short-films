@@ -135,7 +135,9 @@ footer .mark {
   margin: 0 auto;
   padding: 0 16px 10px;      /* カードの下 20px と合わせて、題名 →30px→ 区切り線 */
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* 2026-11-19 原因が分かった（オーナーの iPhone の ?check）：Safari は表紙の 16:9 の高さから幅を逆算し、横向きのときのカードの幅（635px）より
+     列を細くしなかった（縦に戻してもカードが 635px のまま）→ 列の最小の幅を 0 にして、中身の大きさに引っぱられないように */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 32px;
   /* 2026-11-19：スポットライトの光（.card::before）が左右に画面の外まではみ出し、iPhone で回転すると拡大されたままになった → 一覧の中で切る */
   overflow-x: clip;
@@ -143,6 +145,7 @@ footer .mark {
 .card {
   position: relative;
   display: block;
+  min-width: 0;
   text-decoration: none;
   padding-bottom: 20px;
   transition: filter .6s ease, opacity .6s ease;
@@ -153,6 +156,8 @@ footer .mark {
 .grid .card:nth-child(3) { animation-delay: 2.3s; }
 .card .thumb {
   position: relative;
+  width: 100%;       /* 幅をカードに合わせて決め、高さは 16:9 から（Safari が高さから幅を逆算しないように） */
+  min-width: 0;
   aspect-ratio: 16 / 9;
   overflow: hidden;
   border-radius: 4px;
@@ -224,7 +229,7 @@ body:not(.work-page) footer .credit-note { margin: 0 0 60px; }
 
 @media (max-width: 759px) {
   .hero { min-height: 0; padding: 38px 16px; }
-  .grid { grid-template-columns: 1fr; gap: 38px; padding-bottom: 38px; }
+  .grid { grid-template-columns: minmax(0, 1fr); gap: 38px; padding-bottom: 38px; }
   /* 番号と題名を先に、そのあとに表紙 */
   .card { padding-bottom: 0; display: flex; flex-direction: column; }
   .card .thumb { order: 2; }
