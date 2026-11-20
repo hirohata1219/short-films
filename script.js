@@ -270,12 +270,15 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   const inFilm = () => !inAd() && preIdx === pre.length && !post;
   // 本編の終わりのマーク（2026-11-19 オーナー）：本編の最後の 2.6秒、右下にふわっと（作品ごとのデザインは style.css）
   const endMark = screen.querySelector('.end-mark');
-  const END_LEAD = 2.6, END_FADE = parseFloat(v.dataset.endFade) || 0.7;   // data-end-fade：本編の最後に暗くなる秒（2026-11-20 小さなやさしさは 2.0）
+  const END_LEAD = 2.6, END_FADE = parseFloat(v.dataset.endFade) || 0.7, END_EASE = v.dataset.endEase === 'smooth';
+  // data-end-after：本編の絵が最後まで流れきってから、最後の場面のまま この秒でゆっくり黒へ（2026-11-20 小さなやさしさ）。本編の中では暗くしない
+  const END_AFTER = parseFloat(v.dataset.endAfter) || 0, END_WAIT = parseFloat(v.dataset.endWait) || 0;   // data-end-wait：黒くし始めるまで待つ秒   // data-end-fade：本編の最後に暗くなる秒（2026-11-20 小さなやさしさは 2.0）
   // 暗さは CSS の動き（遅れることがある）に任せず、映像の残り時間から毎コマ決める
   let endRaf = null;
   const applyEnd = () => {
     if (post || !inFilm()) return false;
-    const k = Math.max(0, Math.min(1, (END_FADE - filmLeft()) / END_FADE));
+    const k0 = Math.max(0, Math.min(1, (END_FADE - filmLeft()) / END_FADE));
+    const k = END_EASE ? k0 * k0 * (3 - 2 * k0) : k0;   // data-end-ease：ゆっくり始まり、なめらかに黒へ（2026-11-20 小さなやさしさ）
     cover.style.transition = 'none'; cover.style.opacity = k;
     if (endMark && k > 0) { endMark.style.transition = 'none'; endMark.style.opacity = 1 - k; }
     return true;
@@ -293,7 +296,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     if (endMark && !post) endMark.classList.toggle('on', inFilm() && filmLeft() <= (parseFloat(endMark.dataset.lead) || END_LEAD));
     // 2026-11-19 オーナー：本編の最後は、題名の映像と右下のマークを同時に消していく（最後の 0.7秒で一緒に暗く）
     if (!post && inFilm()) {
-      if (filmLeft() <= END_FADE + 0.4) { applyEnd(); if (!endRaf) endRaf = requestAnimationFrame(endTick); }
+      if (!END_AFTER && filmLeft() <= END_FADE + 0.4) { applyEnd(); if (!endRaf) endRaf = requestAnimationFrame(endTick); }
       else clearEndFade();
       // 1本にした作品：本編の絵が終わる時刻ちょうどにエンドロールへ（timeupdate は 0.25秒ほどおきなので、手前で時刻を合わせて待つ）
       if (FILM_END && credits && !joinTimer && filmLeft() <= 0.6) {
@@ -376,6 +379,7 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
     document.body.classList.remove('lights-off');
     screen.classList.remove('post-roll');
     credits.classList.remove('final', 'final-on');
+    credits.style.transition = '';
     const ct = credits.querySelector('.cr-title'); if (ct) ct.classList.remove('show', 'show-slow', 'show-bang');
     scenes.forEach(x => x.classList.remove('on'));
     post = false;
@@ -441,7 +445,9 @@ window.addEventListener('pageshow', () => document.body.classList.remove('leavin
   };
   // 2026-11-18 オーナー：「エンドロールをとばす」は PC もスマホもなくした
   const toCredits = () => {
-    cover.style.transition = 'none'; cover.style.opacity = 1; if (endMark) endMark.style.opacity = 0;
+    // END_AFTER の作品は、エンドロールの黒い背景を END_AFTER 秒でゆっくり重ねる（下の最後の場面と右下のマークがそのまま黒に沈む）
+    if (END_AFTER) credits.style.transition = `opacity ${END_AFTER}s ease-in-out ${END_WAIT}s`;
+    else { cover.style.transition = 'none'; cover.style.opacity = 1; if (endMark) endMark.style.opacity = 0; }
     startCredits();
   };
   v.addEventListener('ended', () => {
